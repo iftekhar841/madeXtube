@@ -15,10 +15,6 @@ const videoSchema = new Schema(
       type: String,
       required: true,
     },
-    title: {
-      type: String,
-      required: true,
-    },
     description: {
       type: String,
     },
@@ -31,13 +27,17 @@ const videoSchema = new Schema(
       required: true,
     },
     isPublished: {
-      type: String,
-      required: true,
+      type: Boolean,
+      default: true,
     },
     owner: {
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    videoCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category"
+    }
   },
   { timestamps: true }
 );

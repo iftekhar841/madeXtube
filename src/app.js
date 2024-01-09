@@ -17,10 +17,14 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 //routes imports
-import user_route from './routes/user.routes.js'
+import user_route from './routes/user.routes.js';
+import video_route from "./routes/videos.routes.js";
+import { category_route } from "./routes/categories.routes.js";
 
 //routes declaration
 app.use("/api/v1/users", user_route);
+app.use("/api/v1/videos", video_route);
+app.use("/api/v1/category", category_route);
 
 //http://localhost:8000/api/v1/users/register
 
