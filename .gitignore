@@ -121,7 +121,6 @@ dist
 /node_modules
 /env
 
-
 # Ignore user-specific files
 .env
 

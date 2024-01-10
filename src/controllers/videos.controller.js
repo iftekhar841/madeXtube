@@ -26,6 +26,7 @@ const createVideos = asyncHandler(async (req, res) => {
           new ApiResponse(201, videoResponse, "Video created Successfully.")
         );
     } catch (error) {
+      console.log("error inside catch block", error);
       // Handle errors and return an appropriate error response
       return res
         .status(500)
@@ -36,7 +37,35 @@ const createVideos = asyncHandler(async (req, res) => {
   });
 
 
+const getAllVideos = asyncHandler(async (req, res) =>{
+    try {
+        const allVideosResponse = await videosService.getAllVideos(req.query);
+        return res
+        .status(200)
+        .json( new ApiResponse(200, allVideosResponse, "Videos fetch successfully") );
+    } catch (error) {
+        return res
+        .status(500)
+        .json(new ApiError({ statusCode: error.statusCode, message: error.message }));
+    }
+});
+
+const getSingleVideoById = asyncHandler(async (req, res) =>{
+  try {
+     console.log("getSingleVideoById", req.params);
+    const singleVideoResponse = await videosService.getSingleVideoById(req.params);
+    return res
+    .status(200)
+    .json( new ApiResponse(200, singleVideoResponse, "Video retrieved successfully") );
+  } catch (error) {
+    return res
+    .status(500)
+    .json(new ApiError({ statusCode: error.statusCode, message: error}));
+  }
+});
 
   export default {
-    createVideos
+    createVideos,
+    getAllVideos,
+    getSingleVideoById
   }

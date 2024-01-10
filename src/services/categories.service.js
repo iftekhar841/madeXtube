@@ -1,6 +1,7 @@
 import { Category } from "../models/categories.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { getMongoosePaginationOptions } from "../utils/helpers.js";
+import { getMongoosePaginationOptions } from "../utils/helperFunctions.js";
+
 
 
 // Create a new category
