@@ -1,3 +1,7 @@
+import { User } from "../models/user.models.js";
+import { Category } from "../models/categories.model.js";
+import { ApiError } from "./ApiError.js";
+
 /**
  *
  * @param {{page: number; limit: number; customLabels: mongoose.CustomLabels;}} options
@@ -19,14 +23,14 @@ export const getMongoosePaginationOptions = ({
   };
 };
 
-// /**
-//  *
-//  * @param {{page: number; limit: number; customLabels: mongoose.CustomLabels;}} options
-//  * @returns {mongoose.PaginateOptions}
-//  */
+/**
+ * Gets the object id of a user based on the provided user id.
+ *
+ * @param {string} userId - The unique identifier of the user.
+ * @returns {Promise<string>} - A Promise that resolves to the user's object id.
+ * @throws {ApiError} - Throws an ApiError if the user is not found or if there's an error during the process.
+ */
 
-import { User } from "../models/user.models.js";
-import { ApiError } from "./ApiError.js";
 export const getUserObjectId = async (userId) => {
   try {
     const user = await User.findOne({ _id: userId }).select("_id isActive");
@@ -41,7 +45,13 @@ export const getUserObjectId = async (userId) => {
   }
 };
 
-import { Category } from "../models/categories.model.js";
+/**
+ * Gets the object id of a user based on the provided user id.
+ *
+ * @param {string} userId - The unique identifier of the user.
+ * @returns {Promise<string>} - A Promise that resolves to the user's object id.
+ * @throws {ApiError} - Throws an ApiError if the user is not found or if there's an error during the process.
+ */
 
 export const getCategoryObjectId = async (categoryId) => {
   try {
