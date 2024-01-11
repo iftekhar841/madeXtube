@@ -1,4 +1,4 @@
-import { param } from "express-validator";
+import { param, validationResult } from "express-validator";
 
 /**
  *
@@ -7,8 +7,21 @@ import { param } from "express-validator";
  */
 
 export const mongoIdPathVariableValidator = (idName) => {
-    console.log("idname", idName);
-    return [
-        param(idName).notEmpty().isMongoId().withMessage(`Invalid mongodb id: ${idName}`)
-    ]
-}
+  console.log("idname", idName);
+  return [
+    param(idName)
+      .notEmpty()
+      .isMongoId()
+      .withMessage(`Invalid mongodb id: ${idName}`),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: errors.array(),
+        });
+      }
+      next();
+    },
+  ];
+};

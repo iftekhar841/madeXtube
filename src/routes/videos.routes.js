@@ -16,6 +16,6 @@ video_route.post("/add-video",
 
 video_route.get('/all-videos', videosController.getAllVideos);
 
-video_route.get('/:videoId', mongoIdPathVariableValidator('videoId'), videosController.getSingleVideoById);
+video_route.get('/get-single-video/:videoId', mongoIdPathVariableValidator('videoId'), videosController.getSingleVideoById);
 
 export default video_route;
