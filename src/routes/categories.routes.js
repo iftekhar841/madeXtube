@@ -11,4 +11,4 @@ category_route.patch('/update-category/:id', categoriesController.updateCategory
 
 category_route.get('/get-category', categoriesController.getAllCategory);
 
-export { category_route };
+export default category_route;

@@ -34,23 +34,28 @@ export const getMongoosePaginationOptions = ({
 export const getUserObjectId = async (userId) => {
   try {
     const user = await User.findOne({ _id: userId }).select("_id isActive");
-
     if (!user) {
       throw new ApiError(404, "User id does not exist");
     } else {
       return user._id;
     }
   } catch (error) {
-    throw new ApiError(error.statusCode, error.message);
+    // Handle the specific case of CastError
+    if (error.name === "CastError") {
+      throw new ApiError(400, "Invalid user id format");
+    } else {
+      // Throw other errors as ApiError with the original status code and message
+      throw new ApiError(error.statusCode, error.message);
+    }
   }
 };
 
 /**
- * Gets the object id of a user based on the provided user id.
+ * Gets the object id of a category based on the provided category id.
  *
- * @param {string} userId - The unique identifier of the user.
- * @returns {Promise<string>} - A Promise that resolves to the user's object id.
- * @throws {ApiError} - Throws an ApiError if the user is not found or if there's an error during the process.
+ * @param {string} categoryId - The unique identifier of the category.
+ * @returns {Promise<string>} - A Promise that resolves to the category's object id.
+ * @throws {ApiError} - Throws an ApiError if the category is not found or if there's an error during the process.
  */
 
 export const getCategoryObjectId = async (categoryId) => {
