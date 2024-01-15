@@ -91,7 +91,7 @@ const loginUser = async (loginDetails) => {
 
   const { emailAndUserName, password } = loginDetails;
 
-  if (!(username || email)) {
+  if (!(emailAndUserName)) {
     throw new ApiError(400, "Username or email is required.");
   }
 

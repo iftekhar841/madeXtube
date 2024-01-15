@@ -25,12 +25,16 @@ import user_route from './routes/user.routes.js';
 import video_route from "./routes/videos.routes.js";
 import category_route from "./routes/categories.routes.js";
 import channel_route from "./routes/channel.route.js";
+import report_route from "./routes/report.route.js";
+import videoReport_route from "./routes/videoReport.route.js";
 
 //routes declaration
 app.use("/api/v1/users", user_route);
 app.use("/api/v1/videos", video_route);
 app.use("/api/v1/category", category_route);
 app.use("/api/v1/channel", channel_route);
+app.use("/api/v1/report", report_route);
+app.use("/api/v1/video-report", videoReport_route);
 
 //http://localhost:8000/api/v1/users/register
 

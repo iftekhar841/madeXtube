@@ -1,6 +1,7 @@
 import { User } from "../models/user.models.js";
 import { Category } from "../models/categories.model.js";
 import { ApiError } from "./ApiError.js";
+import mongoose from "mongoose";
 
 /**
  *
@@ -88,3 +89,24 @@ export const formatDuration = (durationInSeconds) => {
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   return formattedDuration;
 };
+
+/**
+ * Validates and creates ObjectId instances for an array of ids.
+ *
+ * @param {Array<string>} ids - An array of string representations of ObjectId.
+ * @returns {Object} - An object where keys are the original ids and values are corresponding ObjectId instances or null if the id is not valid.
+ */
+
+export const isValidObjectId = (ids) => {
+  const validIds = {};
+
+  ids.forEach((id) => {
+    if(mongoose.Types.ObjectId.isValid(id)) {
+      validIds[id] = new mongoose.Types.ObjectId(id);
+    }
+    else {
+      validIds[id] = null;
+    }
+  });
+  return validIds;
+}
