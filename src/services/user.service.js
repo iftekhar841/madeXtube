@@ -39,9 +39,15 @@ const registerUser = async (
   const existingUser = await User.findOne({
     $or: [{ username }, { email }],
   });
+  console.log("existingUser", existingUser);
   if (existingUser) {
-    throw new ApiError(409, "Neither email nor username already exists.");
+    if (existingUser.username === username) {
+      throw new ApiError(409, "Username already exists.");
+    }
+   else if (existingUser.email === email) {
+      throw new ApiError(409, "Email already exists.");
   }
+}
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatar file is required");
@@ -83,14 +89,14 @@ const loginUser = async (loginDetails) => {
   //access & refresh token generation
   //send tokens in secure cookies
 
-  const { email, username, password } = loginDetails;
+  const { emailAndUserName, password } = loginDetails;
 
   if (!(username || email)) {
     throw new ApiError(400, "Username or email is required.");
   }
 
   const user = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username: emailAndUserName }, { email: emailAndUserName }],
   });
 
   if (!user) {
