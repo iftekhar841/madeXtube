@@ -48,7 +48,7 @@ const updateCategory = asyncHandler(async (req, res) => {
 
 const getAllCategory = asyncHandler(async (req, res) => {
     try {
-        const getResponse = await categoriesService.getAllCategory(req.query);
+        const getResponse = await categoriesService.getAllCategory();
     return res.
     status(200).
     json(new ApiResponse(200, getResponse, "Category fetched successfully."))

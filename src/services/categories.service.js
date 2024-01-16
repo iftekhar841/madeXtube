@@ -55,31 +55,13 @@ const updateCategory = async (updateDetails, _id) => {
     return dataToUpdate;
 }
 
-const getAllCategory = async (queryData) => {
-    // const dataToFetch = await Category.find();
+const getAllCategory = async () => {
+    const dataToFetch = await Category.find();
 
-    // if(!dataToFetch) {
-    //     throw new ApiError(404, "No data to fetch");
-    // }
-    // return dataToFetch 
-
-    const { page = 1, limit = 10 } = queryData;
-    const categoryAggregate = Category.aggregate([ { $match: {} }]);
-
-    const categories = await Category.aggregatePaginate(
-        categoryAggregate,
-        getMongoosePaginationOptions({
-          page,
-          limit,
-          customLabels: {
-            totalDocs: "totalCategories",
-            docs: "categories",
-          },
-        })
-      );
-       
-     console.log("categories: ", categories); 
-    return categories;
+    if(!dataToFetch) {
+        throw new ApiError(404, "No data to fetch");
+    }
+    return dataToFetch 
 }
 
 export default {
