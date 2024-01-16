@@ -2,6 +2,7 @@ import { Channel } from "../models/channel.model.js";
 import { ApiError } from "../utils/ApiError.js"
 import { getUserObjectId } from "../utils/helperFunctions.js";
 
+
 /**
  * Creates a new channel with the provided details.
  *
@@ -28,26 +29,31 @@ const createChannel = async (channelDetails) => {
 
     const existingChannel = await Channel.findOne({ channelName: { $regex: new RegExp(`^${channelName}$`, 'i') } });
 
-    if(existingChannel) {
+    if (existingChannel) {
         throw new ApiError(409, `This Channel ${channelName} already exists`);
     }
 
     // Validate the user and return the user id through this method getUserObjectId
     const ownerId = await getUserObjectId(userId);
-    console.log("ownerId", ownerId);
 
-    const dataToCreate = await Channel.create({
-        channelName,
-        description,
-        owner: ownerId
-    });
+    // Check if the user has already created a channel
+    const userChannels = await Channel.find({ owner: ownerId});
 
-   const dataToFetch = await Channel.findById(dataToCreate._id);
-   
-   if(!dataToFetch) {
-    throw new ApiError(500, "Something went wrong while fetching the channel");
-   }
-   return dataToFetch;
+    if (userChannels.length === 0) {
+        const dataToCreate = await Channel.create({
+            channelName,
+            description,
+            owner: ownerId
+        });
+        const dataToFetch = await Channel.findById(dataToCreate._id);
+
+        if (!dataToFetch) {
+            throw new ApiError(500, "Something went wrong while fetching the channel");
+        }
+        return dataToFetch;
+    } else {
+        throw new ApiError(400, "You have already created a channel")
+    }
 }
 
 export default {
