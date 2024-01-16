@@ -59,29 +59,78 @@ const createVideos = async (
 };
 
 const getAllVideos = async (queryData) => {
-  const videoPopulate = await Video.find()
-    .populate("owner", "_id")
-    .populate("videoCategory", "_id");
 
   const { page = 1, limit = 10 } = queryData;
 
-  const videos = await Video.aggregatePaginate(
-    videoPopulate,
-    getMongoosePaginationOptions({
-      page,
-      limit,
-      customLabels: {
-        totalDocs: "totalVideos",
-        docs: "videos",
-      },
-    })
-  );
+  // const paginationOptions = getMongoosePaginationOptions({
+  //   page,
+  //   limit,
+  //   customLabels: {
+  //     totalDocs: "totalVideos",
+  //     docs: "videos",
+  //   },
+  // });
 
-  if (!videos || videos.length === 0) {
-    throw new ApiError(404, "No videos found");
+  const videoAggregate = await Video.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner"
+        }
+      },
+      {
+        $unwind: "$owner"
+      },
+      {
+        $project: {
+          videoFile: 1,
+          thumbnail: 1,
+          title: 1,
+          description: 1,
+          duration: 1,
+          views: 1,
+          isPublished: 1,
+          videoCategory: 1,
+          createdAt: 1,
+          owner: {
+            _id: 1,
+            avatar: 1
+          },
+          
+        }
+      },
+      // {
+      //   $facet: {
+      //     metadata: [
+      //       { $count: "totalVideos" },
+      //       { $addFields: { serialNumberStartFrom: paginationOptions.page * paginationOptions.limit - paginationOptions.limit + 1 } },
+      //     ],
+      //     videos: [
+      //       { $skip: (paginationOptions.page - 1) * paginationOptions.limit },
+      //       { $limit: paginationOptions.limit },
+      //     ],
+      //   },
+      // },
+      {
+        $facet: {
+          metadata : [{ $count: "totalVideos"}],
+          videos: [
+            { $skip: (page -1) * limit },
+            { $limit: limit }
+          ]
+        }
+      }
+  ])
+
+  console.log("videoAggregate", videoAggregate);
+
+  if (!videoAggregate || videoAggregate.length === 0) {
+    throw new ApiError(404, "No video found");
   }
 
-  return videos;
+  return videoAggregate;
 };
 
 const getSingleVideoById = async (videoId) => {
