@@ -24,15 +24,15 @@ const videoSchema = new Schema(
     },
     views: {
       type: Number,
-      required: true,
+      default: 0
     },
     isPublished: {
       type: Boolean,
       default: true,
     },
-    owner: {
+    channel: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Channel",
     },
     videoCategory: {
       type: Schema.Types.ObjectId,

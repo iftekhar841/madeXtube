@@ -86,8 +86,25 @@ const logoutUser = asyncHandler(async (req, res) => {
   }
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  try {
+    console.log("requesting ", req.user._id);
+    const response = await userService.getUserChannelProfile(req.params, req.user._id);
+     return res
+     .status(200).json( new ApiResponse(200, response, "User Channel Profile fetched successfully"));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+
+})
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
+  getUserChannelProfile
 };

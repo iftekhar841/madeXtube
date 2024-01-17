@@ -6,7 +6,9 @@ import {
   getCategoryObjectId,
   getMongoosePaginationOptions,
   formatDuration,
+  isValidObjectId
 } from "../utils/helperFunctions.js";
+import { Channel } from "../models/channel.model.js";
 
 //Created videos
 const createVideos = async (
@@ -14,16 +16,21 @@ const createVideos = async (
   videoFileLocalPath,
   thumbnailLocalPath
 ) => {
-  const { title, description, views, userId, categoryId } = videoDetails;
+  const { title, description, views, channelId, categoryId } = videoDetails;
 
-  if (!(userId && categoryId)) {
+  if (!(channelId && categoryId)) {
     throw new ApiError(
       404,
-      "UserId and categoryId are required and cannot be empty"
+      "channelId and categoryId are required and cannot be empty"
     );
   }
+  const channels = await Channel.findById({ _id: channelId }).select("_id");
+  console.log("channels", channels);
 
-  const ownerId = await getUserObjectId(userId);
+  if (!channels) {
+    throw new ApiError(404, "channels does not exist");
+  }
+
   const videoCategoryId = await getCategoryObjectId(categoryId);
 
   if (!videoFileLocalPath || !thumbnailLocalPath) {
@@ -38,7 +45,7 @@ const createVideos = async (
   if (!video || !thumbnailImage) {
     throw new ApiError(400, "video file and thumbnail are required");
   }
-
+  console.log("chaneels", channels._id);
   const videoData = await Video.create({
     title,
     videoFile: video?.url || "",
@@ -46,7 +53,7 @@ const createVideos = async (
     description,
     duration: formattedDuration,
     views,
-    owner: ownerId,
+    channel: channels._id,
     videoCategory: videoCategoryId,
   });
 
@@ -62,67 +69,66 @@ const getAllVideos = async (queryData) => {
 
   const { page = 1, limit = 10 } = queryData;
 
-  // const paginationOptions = getMongoosePaginationOptions({
-  //   page,
-  //   limit,
-  //   customLabels: {
-  //     totalDocs: "totalVideos",
-  //     docs: "videos",
-  //   },
-  // });
-
   const videoAggregate = await Video.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "owner",
-          foreignField: "_id",
-          as: "owner"
-        }
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channelData",
       },
-      {
-        $unwind: "$owner"
+    },
+    {
+      $unwind: "$channelData",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "channelData.owner",
+        foreignField: "_id",
+        as: "ownerData",
       },
-      {
-        $project: {
-          videoFile: 1,
-          thumbnail: 1,
-          title: 1,
-          description: 1,
-          duration: 1,
-          views: 1,
-          isPublished: 1,
-          videoCategory: 1,
-          createdAt: 1,
-          owner: {
-            _id: 1,
-            avatar: 1
-          },
-          
-        }
+    },
+    {
+      $unwind: "$ownerData",
+    },
+    {
+      $addFields: {
+        "channelData.owner": {
+          _id: "$ownerData._id",
+          avatar: "$ownerData.avatar",
+        },
       },
-      // {
-      //   $facet: {
-      //     metadata: [
-      //       { $count: "totalVideos" },
-      //       { $addFields: { serialNumberStartFrom: paginationOptions.page * paginationOptions.limit - paginationOptions.limit + 1 } },
-      //     ],
-      //     videos: [
-      //       { $skip: (paginationOptions.page - 1) * paginationOptions.limit },
-      //       { $limit: paginationOptions.limit },
-      //     ],
-      //   },
-      // },
-      {
-        $facet: {
-          metadata : [{ $count: "totalVideos"}],
-          videos: [
-            { $skip: (page -1) * limit },
-            { $limit: limit }
-          ]
-        }
+    },
+    {
+      $project: {
+        _id: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        duration: 1,
+        views: 1,
+        isPublished: 1,
+        videoCategory: 1,
+        createdAt: 1,
+        channelData: {
+          _id: 1,
+          channelName: 1,
+          owner: 1,
+        },
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "totalVideos" }],
+        videos: [
+          { $skip: (page - 1) * limit },
+          { $limit: limit }
+        ]
       }
-  ])
+    }
+  ]);
 
   console.log("videoAggregate", videoAggregate);
 
@@ -130,22 +136,53 @@ const getAllVideos = async (queryData) => {
     throw new ApiError(404, "No video found");
   }
 
-  return videoAggregate;
+  return videoAggregate[0];
 };
 
 const getSingleVideoById = async (videoId) => {
   const videos = await Video.findById(videoId);
 
   if (!videos) {
-    console.log("inside if block");
     throw new ApiError(404, "Videos does not exist");
   }
 
   return videos;
 };
 
+
+const getAllVideoByChannelId = async( paramsData ) => {
+
+  const { channelId } = paramsData;
+  console.log("channelId", channelId);
+  
+ //Validate and create ObjectId instances for channelId 
+ const validIds = isValidObjectId([channelId]);
+
+ if(!validIds[channelId]) {
+  throw new ApiError(400, "Invalid ObjectId Format")
+ }
+
+  // Check existing channel 
+  const existingChannel = await Channel.findById(validIds[channelId]);
+
+  if(!existingChannel) {
+    throw new ApiError(404, "Channel does not exist");
+  }
+
+  // Find all the videos on the basis of the channel
+  const videos = await Video.find({ channel: validIds[channelId] });
+  
+  if(videos && videos.length === 0) {
+    throw new ApiError(404, "No Video Found");
+  }
+
+  return videos;
+}
+
+
 export default {
   createVideos,
   getAllVideos,
   getSingleVideoById,
+  getAllVideoByChannelId
 };

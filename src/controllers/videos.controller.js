@@ -4,7 +4,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
-
 const createVideos = asyncHandler(async (req, res) => {
     try {
       const videoDetails = req.body;
@@ -34,8 +33,7 @@ const createVideos = asyncHandler(async (req, res) => {
           new ApiError({ statusCode: error.statusCode, message: error.message })
         );
     }
-  });
-
+});
 
 const getAllVideos = asyncHandler(async (req, res) =>{
     try {
@@ -64,8 +62,24 @@ const getSingleVideoById = asyncHandler(async (req, res) =>{
   }
 });
 
+const getAllVideoByChannelId = asyncHandler(async (req, res) => {
+  try {
+    console.log("PARAMS GET", req.params);
+    const channelVideoRespoonse = await videosService.getAllVideoByChannelId(req.params);
+    return res
+    .status(200)
+    .json( new ApiResponse(200, channelVideoRespoonse, "Video retrieved successfully retrieved") );
+    
+  } catch (error) {
+      return res
+      .status(500)
+      .json( new ApiError({ statusCode: error.statusCode, message: error.message}));
+  }
+})
+
   export default {
     createVideos,
     getAllVideos,
-    getSingleVideoById
+    getSingleVideoById,
+    getAllVideoByChannelId
   }

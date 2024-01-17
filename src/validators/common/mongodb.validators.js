@@ -7,7 +7,6 @@ import { param, body,  validationResult } from "express-validator";
  */
 
 export const mongoIdPathVariableValidator = (idName) => {
-  console.log("idname", idName);
   return [
     param(idName)
       .notEmpty()

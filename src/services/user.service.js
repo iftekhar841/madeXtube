@@ -141,8 +141,78 @@ const logoutUser = async (userId) => {
   return { message: "User logout was successful" };
 };
 
+
+const getUserChannelProfile = async (paramsData, requestUserId) => {
+  
+  console.log("requestUserId", requestUserId);
+
+  const { username } = paramsData;
+  console.log("params", paramsData);
+  if (!username?.trim()) {
+    throw new ApiError(400, "username is missing");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscriberTo", //to whom subscribe
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: { $ifNull: ["$subscribers", []] },
+        },
+        channelsSubscribedToCount: {
+          $size: { $ifNull: ["$subscriberTo", []] },
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [requestUserId, { $ifNull: ["$subscribers.subscriber", []] }] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        email: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "Channel does not exists");
+  }
+
+  return channel[0];
+}
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
+  getUserChannelProfile
 };

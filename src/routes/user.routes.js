@@ -19,4 +19,6 @@ user_route.post('/login', userController.loginUser);
 // secured routes
 user_route.post("/logout", verifyJWT, userController.logoutUser);
 
+user_route.get("/channel/:username", verifyJWT, userController.getUserChannelProfile);
+
 export default user_route;
