@@ -1,6 +1,6 @@
 import { Channel } from "../models/channel.model.js";
 import { ApiError } from "../utils/ApiError.js"
-import { getUserObjectId } from "../utils/helperFunctions.js";
+import { getUserObjectId, isValidObjectId } from "../utils/helperFunctions.js";
 
 
 /**
@@ -56,6 +56,32 @@ const createChannel = async (channelDetails) => {
     }
 }
 
+
+const getChannelInfoByUserId = async (paramsData) => {
+    const { userId } = paramsData; 
+
+   const validIds =  isValidObjectId([userId])
+
+  // Check if any of the ObjectId instances is invalid  
+   if(!validIds[userId]) {
+    throw new ApiError(400, "Invalid ObjectId Format");
+   }
+
+   const ownerId = await getUserObjectId(validIds[userId]);
+   console.log("ownerId: ", ownerId);
+    
+    const channelInfo = await Channel.findOne({ owner: ownerId });
+    console.log("channelInfo", channelInfo);
+
+    if(!channelInfo) {
+        throw new ApiError(400, "There is no channel exists with this users")
+    }
+
+    return channelInfo;
+}
+
+
 export default {
     createChannel,
+    getChannelInfoByUserId
 }

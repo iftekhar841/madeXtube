@@ -22,6 +22,26 @@ const createChannel = asyncHandler(async (req, res) => {
     }
 })
 
+
+// Get Controller to handle the API request and response
+const getChannelInfoByUserId = asyncHandler(async (req, res) => {
+    try {
+        const getResponse = await channelService.getChannelInfoByUserId(
+            req.params
+        );
+        return res
+        .status(201)
+        .json( new ApiResponse(201, getResponse, "Channel info fetch successfully"));
+   
+    } catch (error) {
+        return res
+        .status(500)
+        .json( new ApiError({ statusCode: error.statusCode, message: error.message }))
+        
+    }
+})
+
 export default {
-    createChannel
+    createChannel,
+    getChannelInfoByUserId
 }
