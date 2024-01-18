@@ -50,8 +50,7 @@ const getAllVideos = asyncHandler(async (req, res) =>{
 
 const getSingleVideoById = asyncHandler(async (req, res) =>{
   try {
-    const { videoId } = req.params;
-    const singleVideoResponse = await videosService.getSingleVideoById(videoId);
+    const singleVideoResponse = await videosService.getSingleVideoById(req.params);
     return res
     .status(200)
     .json( new ApiResponse(200, singleVideoResponse, "Video retrieved successfully") );

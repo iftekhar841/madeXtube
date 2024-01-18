@@ -65,6 +65,7 @@ const createVideos = async (
   return dataToFetch;
 };
 
+// Get all videos
 const getAllVideos = async (queryData) => {
 
   const { page = 1, limit = 10 } = queryData;
@@ -139,17 +140,84 @@ const getAllVideos = async (queryData) => {
   return videoAggregate[0];
 };
 
-const getSingleVideoById = async (videoId) => {
-  const videos = await Video.findById(videoId);
+// Get single video by using its Id
+const getSingleVideoById = async (paramsData) => {
+  const { videoId } = paramsData;
 
-  if (!videos) {
-    throw new ApiError(404, "Videos does not exist");
+  // Validate and create ObjectId instances for videoId
+  const validIds = isValidObjectId([videoId]);
+
+  if (!validIds[videoId]) {
+    throw new ApiError(400, "Invalid ObjectId Format");
   }
 
-  return videos;
+  const singleVideoAggregate = await Video.aggregate([
+    {
+      $match: {
+        _id: validIds[videoId],
+      },
+    },
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channelData",
+      },
+    },
+    {
+      $unwind: "$channelData",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "channelData.owner",
+        foreignField: "_id",
+        as: "ownerData",
+      },
+    },
+    {
+      $unwind: "$ownerData",
+    },
+    {
+      $addFields: {
+        "channelData.owner": {
+          _id: "$ownerData._id",
+          avatar: "$ownerData.avatar",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        duration: 1,
+        views: 1,
+        isPublished: 1,
+        videoCategory: 1,
+        createdAt: 1,
+        channelData: {
+          _id: 1,
+          channelName: 1,
+          owner: 1,
+        },
+      },
+    },
+  ]);
+
+  if (!singleVideoAggregate || singleVideoAggregate.length === 0) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  const singleVideo = singleVideoAggregate[0];
+
+  return singleVideo;
 };
 
-
+//  Get all the video by using of channelId
 const getAllVideoByChannelId = async( paramsData ) => {
 
   const { channelId } = paramsData;
@@ -173,7 +241,7 @@ const getAllVideoByChannelId = async( paramsData ) => {
   const videos = await Video.find({ channel: validIds[channelId] });
   
   if(videos && videos.length === 0) {
-    throw new ApiError(404, "No Video Found");
+    throw new ApiError(404, "No Video Found");                                                                                                                                                      
   }
 
   return videos;
