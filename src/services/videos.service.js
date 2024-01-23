@@ -146,7 +146,6 @@ const getSingleVideoById = async (paramsData) => {
 
   // Validate and create ObjectId instances for videoId
   const validIds = isValidObjectId([videoId]);
-
   if (!validIds[videoId]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }

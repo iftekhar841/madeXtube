@@ -27,6 +27,7 @@ import category_route from "./routes/categories.routes.js";
 import channel_route from "./routes/channel.route.js";
 import report_route from "./routes/report.route.js";
 import videoReport_route from "./routes/videoReport.route.js";
+import like_and_dislike_route from "./routes/videoLikeAndDislike.route.js";
 
 //routes declaration
 app.use("/api/v1/users", user_route);
@@ -35,6 +36,8 @@ app.use("/api/v1/category", category_route);
 app.use("/api/v1/channel", channel_route);
 app.use("/api/v1/report", report_route);
 app.use("/api/v1/video-report", videoReport_route);
+app.use("/api/v1/video", like_and_dislike_route);
+
 
 //http://localhost:8000/api/v1/users/register
 
