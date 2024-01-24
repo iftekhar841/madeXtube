@@ -63,22 +63,57 @@ const getSingleVideoById = asyncHandler(async (req, res) =>{
 
 const getAllVideoByChannelId = asyncHandler(async (req, res) => {
   try {
-    console.log("PARAMS GET", req.params);
+
     const channelVideoRespoonse = await videosService.getAllVideoByChannelId(req.params);
     return res
     .status(200)
-    .json( new ApiResponse(200, channelVideoRespoonse, "Video retrieved successfully retrieved") );
+    .json( new ApiResponse(200, channelVideoRespoonse, "Video retrieved successfully") );
     
   } catch (error) {
       return res
       .status(500)
       .json( new ApiError({ statusCode: error.statusCode, message: error.message}));
   }
-})
+});
+
+const getAllVideoByCategoryId = asyncHandler(async (req, res) => {
+  try {
+
+    const categoryVideoRespoonse = await videosService.getAllVideoByCategoryId(req.params);
+    return res
+    .status(200)
+    .json( new ApiResponse(200, categoryVideoRespoonse, "Video retrieved successfully") );
+    
+  } catch (error) {
+      return res
+      .status(500)
+      .json( new ApiError({ statusCode: error.statusCode, message: error.message}));
+  }
+});
+
+const getAllVideoByShortsId = asyncHandler(async (req, res) => {
+  try {
+    
+    const shortsVideoRespoonse = await videosService.getAllVideoByShortsId(
+      req.params,
+      req.query
+      );
+    return res
+    .status(200)
+    .json( new ApiResponse(200, shortsVideoRespoonse, "Shorts video retrieved successfully") );
+    
+  } catch (error) {
+      return res
+      .status(500)
+      .json( new ApiError({ statusCode: error.statusCode, message: error.message}));
+  }
+});
 
   export default {
     createVideos,
     getAllVideos,
     getSingleVideoById,
-    getAllVideoByChannelId
+    getAllVideoByChannelId,
+    getAllVideoByCategoryId,
+    getAllVideoByShortsId
   }

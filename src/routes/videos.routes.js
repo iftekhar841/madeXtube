@@ -18,6 +18,10 @@ video_route.get('/all-videos', videosController.getAllVideos);
 
 video_route.get('/get-single-video/:videoId', mongoIdPathVariableValidator('videoId'), videosController.getSingleVideoById);
 
-video_route.get('/:channelId', mongoIdPathVariableValidator('channelId'), videosController.getAllVideoByChannelId);
+video_route.get('/getByChannelId/:channelId', mongoIdPathVariableValidator('channelId'), videosController.getAllVideoByChannelId);
+
+video_route.get('/getByCategoryId/:categoryId', mongoIdPathVariableValidator('categoryId'), videosController.getAllVideoByCategoryId);
+
+video_route.get('/shorts/:shortsId', mongoIdPathVariableValidator('shortsId'), videosController.getAllVideoByShortsId);
 
 export default video_route;

@@ -6,9 +6,10 @@ import {
   getCategoryObjectId,
   getMongoosePaginationOptions,
   formatDuration,
-  isValidObjectId
+  isValidObjectId,
 } from "../utils/helperFunctions.js";
 import { Channel } from "../models/channel.model.js";
+import { Category } from "../models/categories.model.js";
 
 //Created videos
 const createVideos = async (
@@ -67,7 +68,6 @@ const createVideos = async (
 
 // Get all videos
 const getAllVideos = async (queryData) => {
-
   const { page = 1, limit = 10 } = queryData;
 
   const videoAggregate = await Video.aggregate([
@@ -123,12 +123,9 @@ const getAllVideos = async (queryData) => {
     {
       $facet: {
         metadata: [{ $count: "totalVideos" }],
-        videos: [
-          { $skip: (page - 1) * limit },
-          { $limit: limit }
-        ]
-      }
-    }
+        videos: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+      },
+    },
   ]);
 
   console.log("videoAggregate", videoAggregate);
@@ -217,39 +214,231 @@ const getSingleVideoById = async (paramsData) => {
 };
 
 //  Get all the video by using of channelId
-const getAllVideoByChannelId = async( paramsData ) => {
-
+const getAllVideoByChannelId = async (paramsData) => {
   const { channelId } = paramsData;
   console.log("channelId", channelId);
-  
- //Validate and create ObjectId instances for channelId 
- const validIds = isValidObjectId([channelId]);
 
- if(!validIds[channelId]) {
-  throw new ApiError(400, "Invalid ObjectId Format")
- }
+  //Validate and create ObjectId instances for channelId
+  const validIds = isValidObjectId([channelId]);
 
-  // Check existing channel 
+  if (!validIds[channelId]) {
+    throw new ApiError(400, "Invalid ObjectId Format");
+  }
+
+  // Check existing channel
   const existingChannel = await Channel.findById(validIds[channelId]);
 
-  if(!existingChannel) {
+  if (!existingChannel) {
     throw new ApiError(404, "Channel does not exist");
   }
 
   // Find all the videos on the basis of the channel
   const videos = await Video.find({ channel: validIds[channelId] });
-  
-  if(videos && videos.length === 0) {
-    throw new ApiError(404, "No Video Found");                                                                                                                                                      
+
+  if (videos && videos.length === 0) {
+    throw new ApiError(404, "No Video Found");
   }
 
   return videos;
-}
+};
 
+//  Get all the video by using of categoryId
+const getAllVideoByCategoryId = async (paramsData) => {
+  const { categoryId } = paramsData;
+
+  //Validate and create ObjectId instances for categoryId
+  const validIds = isValidObjectId([categoryId]);
+  if (!validIds[categoryId]) {
+    throw new ApiError(400, "Invalid ObjectId Format");
+  }
+
+  // Check existing category
+  const existingCategory = await getCategoryObjectId(validIds[categoryId]);
+
+  if (!existingCategory) {
+    throw new ApiError(404, "Category does not exist");
+  }
+
+  // Find all the videos on the basis of the category
+
+  const categoryVideoAggregate = await Video.aggregate([
+    {
+      $match: {
+        videoCategory: validIds[categoryId],
+      },
+    },
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channelData",
+      },
+    },
+    {
+      $unwind: "$channelData",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "channelData.owner",
+        foreignField: "_id",
+        as: "ownerData",
+      },
+    },
+    {
+      $unwind: "$ownerData",
+    },
+    {
+      $addFields: {
+        "channelData.owner": {
+          _id: "$ownerData._id",
+          avatar: "$ownerData.avatar",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        duration: 1,
+        views: 1,
+        isPublished: 1,
+        videoCategory: 1,
+        createdAt: 1,
+        channelData: {
+          _id: 1,
+          channelName: 1,
+          owner: 1,
+        },
+      },
+    },
+  ]);
+
+  if (categoryVideoAggregate && categoryVideoAggregate.length === 0) {
+    throw new ApiError(404, "No Video Found");
+  }
+
+  return categoryVideoAggregate;
+};
+
+//  Get all the video by using of shortsId
+const getAllVideoByShortsId = async (paramsData, queryData) => {
+  const { shortsId } = paramsData;
+  const { page = 1, limit = 10 } = queryData;
+
+  const isValidShortsId = isValidObjectId([shortsId]);
+  
+  if(!isValidShortsId[shortsId]) {
+    throw new ApiError(404, "Invalid ObjectId Format");
+  }
+
+  // const shortsExists = await Category.findById(isValidShortsId[shortsId]);
+  // console.log("ShortsExists", shortsExists);
+
+  // Check existing category
+  const shortsExists = await getCategoryObjectId(isValidShortsId[shortsId]);
+  console.log("exisng short", shortsExists);
+
+  if(!shortsExists) {
+    throw new ApiError(400, "Shorts does not exists");
+  }
+
+  const shortsVideoAggregate = await Video.aggregate([
+          {
+            $match: {
+              videoCategory: shortsExists,
+            },
+          },
+          {
+            $lookup: {
+              from: "channels",
+              localField: "channel",
+              foreignField: "_id",
+              as: "channelData",
+            }
+          },
+          {
+            $unwind: "$channelData",
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "channelData.owner",
+              foreignField: "_id",
+              as: "ownerData",
+            }
+          },
+          {
+            $unwind: "$ownerData",
+          },
+          {
+            $lookup: {
+                from: "categories",
+                localField: "videoCategory",
+                foreignField: "_id",
+                as: "videoCategoryData",
+            }
+          },
+          {
+            $unwind: "$videoCategoryData",
+          },
+          {
+            $addFields: {
+              "channelData.owner": {
+                _id: "$ownerData._id",
+                avatar: "$ownerData.avatar"
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              videoFile: 1,
+              thumbnail: 1,
+              title: 1,
+              description: 1,
+              duration: 1,
+              views: 1,
+              isPublished: 1,
+              channel: 1,
+              createdAt: 1,
+              updatedAt: 1,
+              videoCategoryData: {
+                _id: "$videoCategoryData._id",
+                categoryName: "$videoCategoryData.categoryName",
+              },
+              channelData: {
+                _id: 1,
+                channelName: 1,
+                owner: 1,
+              }
+            }
+          },
+          {
+            $facet: {
+              metadata: [{ $count: "totalShortsVideos" }],
+              shortsVideos: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+            },
+          },
+  ])
+
+  if (shortsVideoAggregate && shortsVideoAggregate.length === 0) {
+    throw new ApiError(404, "No Shorts Video Found");
+  }
+
+  return shortsVideoAggregate[0];
+
+};
 
 export default {
   createVideos,
   getAllVideos,
   getSingleVideoById,
-  getAllVideoByChannelId
+  getAllVideoByChannelId,
+  getAllVideoByCategoryId,
+  getAllVideoByShortsId
 };
