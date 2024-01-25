@@ -7,7 +7,6 @@ import {
   isValidObjectId,
 } from "../utils/helperFunctions.js";
 import { Channel } from "../models/channel.model.js";
-import { Category } from "../models/categories.model.js";
 
 //Created videos
 const createVideos = async (

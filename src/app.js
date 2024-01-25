@@ -27,7 +27,7 @@ import category_route from "./routes/categories.routes.js";
 import channel_route from "./routes/channel.route.js";
 import report_route from "./routes/report.route.js";
 import videoReport_route from "./routes/videoReport.route.js";
-import like_and_dislike_route from "./routes/videoLikeAndDislike.route.js";
+import likeAndDislikeRoute from "./routes/videoLikeAndDislike.route.js";
 import download_route from "./routes/download.route.js";
 import history_route from "./routes/history.route.js";
 
@@ -38,7 +38,7 @@ app.use("/api/v1/category", category_route);
 app.use("/api/v1/channel", channel_route);
 app.use("/api/v1/report", report_route);
 app.use("/api/v1/video-report", videoReport_route);
-app.use("/api/v1/video", like_and_dislike_route);
+app.use("/api/v1/video", likeAndDislikeRoute);
 app.use("/api/v1/downloads", download_route);
 app.use("/api/v1/history", history_route);
 
