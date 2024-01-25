@@ -2,9 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { Video } from "../models/videos.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import {
-  getUserObjectId,
   getCategoryObjectId,
-  getMongoosePaginationOptions,
   formatDuration,
   isValidObjectId,
 } from "../utils/helperFunctions.js";
@@ -67,8 +65,10 @@ const createVideos = async (
 };
 
 // Get all videos
-const getAllVideos = async (queryData) => {
-  const { page = 1, limit = 10 } = queryData;
+const getAllVideos = async (queryParams) => {
+  const { page = 1, limit = 10 } = queryParams || {}; // Set default values if queryData is undefined;
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
 
   const videoAggregate = await Video.aggregate([
     {
@@ -122,15 +122,44 @@ const getAllVideos = async (queryData) => {
     },
     {
       $facet: {
+        videos: [
+          { $skip: (parsedPage - 1) * parsedLimit },
+          { $limit: parsedLimit },
+        ],
         metadata: [{ $count: "totalVideos" }],
-        videos: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+      },
+    },
+    {
+      $addFields: {
+        pagination: {
+          fetchNoOfDocs: { $size: "$videos" },
+          totalRecords: { $arrayElemAt: ["$metadata.totalVideos", 0] },
+          totalPages: {
+            $ceil: {
+              $divide: [
+                { $arrayElemAt: ["$metadata.totalVideos", 0] },
+                parsedLimit,
+              ],
+            },
+          },
+          currentPage: parsedPage,
+          perPage: parsedLimit,
+        },
+      },
+    },
+    {
+      $project: {
+        videos: 1,
+        pagination: 1,
       },
     },
   ]);
 
-  console.log("videoAggregate", videoAggregate);
-
-  if (!videoAggregate || videoAggregate.length === 0) {
+  if (
+    !videoAggregate ||
+    !videoAggregate[0] ||
+    videoAggregate[0].videos.length === 0
+  ) {
     throw new ApiError(404, "No video found");
   }
 
@@ -331,8 +360,8 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
   const { page = 1, limit = 10 } = queryData;
 
   const isValidShortsId = isValidObjectId([shortsId]);
-  
-  if(!isValidShortsId[shortsId]) {
+
+  if (!isValidShortsId[shortsId]) {
     throw new ApiError(404, "Invalid ObjectId Format");
   }
 
@@ -343,95 +372,94 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
   const shortsExists = await getCategoryObjectId(isValidShortsId[shortsId]);
   console.log("exisng short", shortsExists);
 
-  if(!shortsExists) {
+  if (!shortsExists) {
     throw new ApiError(400, "Shorts does not exists");
   }
 
   const shortsVideoAggregate = await Video.aggregate([
-          {
-            $match: {
-              videoCategory: shortsExists,
-            },
-          },
-          {
-            $lookup: {
-              from: "channels",
-              localField: "channel",
-              foreignField: "_id",
-              as: "channelData",
-            }
-          },
-          {
-            $unwind: "$channelData",
-          },
-          {
-            $lookup: {
-              from: "users",
-              localField: "channelData.owner",
-              foreignField: "_id",
-              as: "ownerData",
-            }
-          },
-          {
-            $unwind: "$ownerData",
-          },
-          {
-            $lookup: {
-                from: "categories",
-                localField: "videoCategory",
-                foreignField: "_id",
-                as: "videoCategoryData",
-            }
-          },
-          {
-            $unwind: "$videoCategoryData",
-          },
-          {
-            $addFields: {
-              "channelData.owner": {
-                _id: "$ownerData._id",
-                avatar: "$ownerData.avatar"
-              }
-            }
-          },
-          {
-            $project: {
-              _id: 1,
-              videoFile: 1,
-              thumbnail: 1,
-              title: 1,
-              description: 1,
-              duration: 1,
-              views: 1,
-              isPublished: 1,
-              channel: 1,
-              createdAt: 1,
-              updatedAt: 1,
-              videoCategoryData: {
-                _id: "$videoCategoryData._id",
-                categoryName: "$videoCategoryData.categoryName",
-              },
-              channelData: {
-                _id: 1,
-                channelName: 1,
-                owner: 1,
-              }
-            }
-          },
-          {
-            $facet: {
-              metadata: [{ $count: "totalShortsVideos" }],
-              shortsVideos: [{ $skip: (page - 1) * limit }, { $limit: limit }],
-            },
-          },
-  ])
+    {
+      $match: {
+        videoCategory: shortsExists,
+      },
+    },
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channelData",
+      },
+    },
+    {
+      $unwind: "$channelData",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "channelData.owner",
+        foreignField: "_id",
+        as: "ownerData",
+      },
+    },
+    {
+      $unwind: "$ownerData",
+    },
+    {
+      $lookup: {
+        from: "categories",
+        localField: "videoCategory",
+        foreignField: "_id",
+        as: "videoCategoryData",
+      },
+    },
+    {
+      $unwind: "$videoCategoryData",
+    },
+    {
+      $addFields: {
+        "channelData.owner": {
+          _id: "$ownerData._id",
+          avatar: "$ownerData.avatar",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        duration: 1,
+        views: 1,
+        isPublished: 1,
+        channel: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        videoCategoryData: {
+          _id: "$videoCategoryData._id",
+          categoryName: "$videoCategoryData.categoryName",
+        },
+        channelData: {
+          _id: 1,
+          channelName: 1,
+          owner: 1,
+        },
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "totalShortsVideos" }],
+        shortsVideos: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+      },
+    },
+  ]);
 
   if (shortsVideoAggregate && shortsVideoAggregate.length === 0) {
     throw new ApiError(404, "No Shorts Video Found");
   }
 
   return shortsVideoAggregate[0];
-
 };
 
 export default {
@@ -440,5 +468,5 @@ export default {
   getSingleVideoById,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
-  getAllVideoByShortsId
+  getAllVideoByShortsId,
 };
