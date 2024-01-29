@@ -24,7 +24,7 @@ const videoSchema = new Schema(
     },
     views: {
       type: Number,
-      default: 0
+      default: 0,
     },
     isPublished: {
       type: Boolean,
@@ -36,8 +36,8 @@ const videoSchema = new Schema(
     },
     videoCategory: {
       type: Schema.Types.ObjectId,
-      ref: "Category"
-    }
+      ref: "Category",
+    },
   },
   { timestamps: true }
 );

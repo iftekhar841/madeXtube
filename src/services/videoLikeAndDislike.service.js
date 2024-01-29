@@ -3,17 +3,21 @@ import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
 import { Video } from "../models/videos.models.js";
 import { ApiError } from "../utils/ApiError.js";
 
-
 // Liked API's methods
-const createLikeVideo = async (videoId, userId) => {
+const createLikeVideo = async (videoId, userId, loggedInUser) => {
   // Validate and create ObjectId instances for videoId, userId
-  const validIds = isValidObjectId([videoId, userId]);
+  const validIds = isValidObjectId([videoId, userId, loggedInUser]);
 
-  if (!validIds[videoId]) {
+  if (!validIds[videoId] || !validIds[loggedInUser]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
   const ownerId = await getUserObjectId(validIds[userId]);
+
+  // To Check if user is logged in or not
+  if (validIds[loggedInUser].toString() !== ownerId.toString()) {
+    throw new ApiError(400, "Only authorized User can like the Video");
+  }
 
   // Check if the video exists
   const videoExist = await Video.findById({ _id: validIds[videoId] }).select(
@@ -58,15 +62,20 @@ const createLikeVideo = async (videoId, userId) => {
 };
 
 // Disliked API's methods
-const createdisLikeVideo = async (videoId, userId) => {
+const createdisLikeVideo = async (videoId, userId, loggedInUser) => {
   // Validate and create ObjectId instances for videoId, userId
-  const validIds = isValidObjectId([videoId, userId]);
+  const validIds = isValidObjectId([videoId, userId, loggedInUser]);
 
-  if (!validIds[videoId]) {
+  if (!validIds[videoId] || !validIds[loggedInUser]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
   const ownerId = await getUserObjectId(validIds[userId]);
+
+  // Check if the user is logged in or not
+  if (validIds[loggedInUser].toString() !== ownerId.toString()) {
+    throw new ApiError(400, "Only authorized User can dislike the Video");
+  }
 
   // Check if the video exists
   const videoExist = await Video.findById({ _id: validIds[videoId] }).select(
@@ -110,7 +119,21 @@ const createdisLikeVideo = async (videoId, userId) => {
   return newdisLike;
 };
 
+// Get All Like count API's methods
+
+const getAllLikeVideo = async (videoId) => {
+  const videoExists = await VideoLikeAndDislike.find({ videoId: videoId });
+  console.log("video exists", videoExists);
+
+  if (!videoExists) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  return videoExists;
+};
+
 export default {
   createLikeVideo,
   createdisLikeVideo,
+  getAllLikeVideo,
 };

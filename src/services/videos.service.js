@@ -7,6 +7,7 @@ import {
   isValidObjectId,
 } from "../utils/helperFunctions.js";
 import { Channel } from "../models/channel.model.js";
+import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
 
 //Created videos
 const createVideos = async (
@@ -43,7 +44,7 @@ const createVideos = async (
   if (!video || !thumbnailImage) {
     throw new ApiError(400, "video file and thumbnail are required");
   }
-  console.log("chaneels", channels._id);
+
   const videoData = await Video.create({
     title,
     videoFile: video?.url || "",
@@ -65,7 +66,7 @@ const createVideos = async (
 
 // Get all videos
 const getAllVideos = async (queryParams) => {
-  const { page = 1, limit = 10 } = queryParams || {}; // Set default values if queryData is undefined;
+  const { page = 1, limit = 12 } = queryParams || {}; // Set default values if queryData is undefined;
   const parsedPage = parseInt(page);
   const parsedLimit = parseInt(limit);
 
@@ -175,6 +176,10 @@ const getSingleVideoById = async (paramsData) => {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
+  // Fetch no of like count
+  const videoLike = await VideoLikeAndDislike.find({ videoId: videoId });
+  const likesCount = videoLike.reduce((sum, video) => sum + video.likes, 0);
+
   const singleVideoAggregate = await Video.aggregate([
     {
       $match: {
@@ -238,7 +243,35 @@ const getSingleVideoById = async (paramsData) => {
 
   const singleVideo = singleVideoAggregate[0];
 
+  // Attach likesCount to singleVideo
+  singleVideo.likesCount = likesCount;
+
   return singleVideo;
+};
+
+// Update the view of video
+const updateViewVideo = async (paramsData) => {
+  const { videoId } = paramsData;
+
+  // Validate and create ObjectId instance for videoId
+  const validIds = isValidObjectId([videoId]);
+  if (!validIds[videoId]) {
+    throw new ApiError(400, "Invalid ObjectId Format");
+  }
+
+  const viewToUpdate = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $inc: { views: 1 },
+    },
+    { new: true }
+  );
+
+  if (!viewToUpdate) {
+    throw new ApiError(404, "Video not found or view is not updated.");
+  }
+
+  return viewToUpdate;
 };
 
 //  Get all the video by using of channelId
@@ -356,7 +389,7 @@ const getAllVideoByCategoryId = async (paramsData) => {
 //  Get all the video by using of shortsId
 const getAllVideoByShortsId = async (paramsData, queryData) => {
   const { shortsId } = paramsData;
-  const { page = 1, limit = 10 } = queryData;
+  const { page = 1, limit = 12 } = queryData;
 
   const isValidShortsId = isValidObjectId([shortsId]);
 
@@ -465,6 +498,7 @@ export default {
   createVideos,
   getAllVideos,
   getSingleVideoById,
+  updateViewVideo,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
   getAllVideoByShortsId,

@@ -88,7 +88,7 @@ const deleteAllDownloadVideo = async (loggedInUser) => {
 
 //Remove video from Download
 const getAllDownloadVideo = async (loggedInUser, queryParams) => {
-  const { page = 1, limit = 10 } = queryParams;
+  const { page = 1, limit = 12 } = queryParams;
 
   if (!isValidObjectId(loggedInUser)) {
     throw new ApiError(400, "Invalid Owner Id");

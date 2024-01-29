@@ -27,7 +27,6 @@ const registerUser = async (
   avatarLocalPath,
   coverImageLocalPath
 ) => {
-    
   const { username, fullName, email, password } = userDetails;
 
   if (
@@ -43,11 +42,10 @@ const registerUser = async (
   if (existingUser) {
     if (existingUser.username === username) {
       throw new ApiError(409, "Username already exists.");
-    }
-   else if (existingUser.email === email) {
+    } else if (existingUser.email === email) {
       throw new ApiError(409, "Email already exists.");
+    }
   }
-}
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatar file is required");
@@ -91,7 +89,7 @@ const loginUser = async (loginDetails) => {
 
   const { emailAndUserName, password } = loginDetails;
 
-  if (!(emailAndUserName)) {
+  if (!emailAndUserName) {
     throw new ApiError(400, "Username or email is required.");
   }
 
@@ -141,9 +139,7 @@ const logoutUser = async (userId) => {
   return { message: "User logout was successful" };
 };
 
-
 const getUserChannelProfile = async (paramsData, requestUserId) => {
-  
   console.log("requestUserId", requestUserId);
 
   const { username } = paramsData;
@@ -182,7 +178,12 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
         },
         isSubscribed: {
           $cond: {
-            if: { $in: [requestUserId, { $ifNull: ["$subscribers.subscriber", []] }] },
+            if: {
+              $in: [
+                requestUserId,
+                { $ifNull: ["$subscribers.subscriber", []] },
+              ],
+            },
             then: true,
             else: false,
           },
@@ -208,11 +209,11 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
   }
 
   return channel[0];
-}
+};
 
 export default {
   registerUser,
   loginUser,
   logoutUser,
-  getUserChannelProfile
+  getUserChannelProfile,
 };

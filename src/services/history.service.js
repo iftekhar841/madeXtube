@@ -80,7 +80,7 @@ const removedAllHistory = async (loggedInUser) => {
 };
 
 const getAllHistory = async (loggedInUser, queryParams) => {
-  const { page = 1, limit = 10 } = queryParams || {}; // Set default values if queryData is undefined
+  const { page = 1, limit = 12 } = queryParams || {}; // Set default values if queryData is undefined
 
   if (!isValidObjectId(loggedInUser)) {
     throw new ApiError(400, "Invalid Owner Id");
