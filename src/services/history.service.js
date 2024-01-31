@@ -24,9 +24,26 @@ const addHistory = async (paramsData, loggedInUser) => {
     throw new ApiError(404, "Video not found");
   }
 
-  const videoInHistory = await History.findOne({ video: videoId });
+  // Check if the user has already viewed the video on the same day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  console.log("today: ", today);
+
+  const videoInHistory = await History.findOne({
+    video: video._id,
+    user: loggedInUser,
+    createdAt: { $gte: today },
+  });
+
   console.log("videoInHistory: ", videoInHistory);
 
+  if (videoInHistory) {
+    // User has already viewed the video today, no need to add to history again
+    return videoInHistory;
+  }
+
+  // Add the video to history
   const historyToCreate = await History.create({
     video: video._id,
     user: loggedInUser,

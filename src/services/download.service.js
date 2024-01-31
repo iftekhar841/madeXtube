@@ -75,11 +75,14 @@ const deleteDownloadVideo = async (paramsData, loggedInUser) => {
 
 //Remove video from Download
 const deleteAllDownloadVideo = async (loggedInUser) => {
-  if (!isValidObjectId(loggedInUser)) {
+
+  const validIds = isValidObjectId([loggedInUser]);
+
+  if (!validIds[loggedInUser]) {
     throw new ApiError(400, "Invalid Owner Id");
   }
 
-  const removedAllDownload = await Download.deleteMany({ owner: loggedInUser });
+  const removedAllDownload = await Download.deleteMany({ owner: validIds[loggedInUser] });
 
   if (removedAllDownload.deletedCount === 0) {
     throw new ApiError(400, "No download records found");
