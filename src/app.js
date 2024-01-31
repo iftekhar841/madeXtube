@@ -30,6 +30,8 @@ import videoReport_route from "./routes/videoReport.route.js";
 import likeAndDislikeRoute from "./routes/videoLikeAndDislike.route.js";
 import download_route from "./routes/download.route.js";
 import history_route from "./routes/history.route.js";
+import subscription_route from "./routes/subscription.route.js";
+import watchLater_route from "./routes/watchLater.route.js";
 
 //routes declaration
 app.use("/api/v1/users", user_route);
@@ -41,6 +43,8 @@ app.use("/api/v1/video-report", videoReport_route);
 app.use("/api/v1/video", likeAndDislikeRoute);
 app.use("/api/v1/downloads", download_route);
 app.use("/api/v1/history", history_route);
+app.use("/api/v1/subscriptions", subscription_route);
+app.use("/api/v1/watchLater", watchLater_route);
 
 
 
