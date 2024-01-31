@@ -7,17 +7,19 @@ import {  isValidObjectId } from "../utils/helperFunctions.js";
 const addDownloadVideo = async (paramsData, loggedInUser) => {
   const { videoId } = paramsData;
 
-  if (!isValidObjectId(videoId)) {
+  const validIds = isValidObjectId([videoId])
+
+  if (!validIds[videoId]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
-  const existingVideo = await Video.findById(videoId).select("_id");
+  const existingVideo = await Video.findById(validIds[videoId]).select("_id");
 
   if (!existingVideo) {
     throw new ApiError(400, "Video dees not exists");
   }
 
-  const videoInDownload = await Download.findOne({ video: videoId, owner: loggedInUser });
+  const videoInDownload = await Download.findOne({ video: validIds[videoId], owner: loggedInUser });
   console.log("videoInDownload", videoInDownload);
 
   if (videoInDownload) {
@@ -95,15 +97,17 @@ const deleteAllDownloadVideo = async (loggedInUser) => {
 const getAllDownloadVideo = async (loggedInUser, queryParams) => {
   const { page = 1, limit = 12 } = queryParams;
 
-  if (!isValidObjectId(loggedInUser)) {
+  const validIds = isValidObjectId([loggedInUser])
+
+  if (!validIds[loggedInUser]) {
     throw new ApiError(400, "Invalid Owner Id");
   }
 
   const totalDownloadCount = await Download.countDocuments({
-    owner: loggedInUser,
+    owner: validIds[loggedInUser],
   });
 
-  const fetchToDownload = await Download.find({ owner: loggedInUser })
+  const fetchToDownload = await Download.find({ owner: validIds[loggedInUser] })
     .populate("video")
     .skip((page - 1) * limit)
     .limit(limit);
