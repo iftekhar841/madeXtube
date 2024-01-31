@@ -25,4 +25,6 @@ watchLater_route.delete(
   watchLaterController.removeAllWatchLater
 );
 
+watchLater_route.get("/all-watchLater", watchLaterController.getAllWatchLater);
+
 export default watchLater_route;

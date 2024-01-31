@@ -17,8 +17,6 @@ const addWatchLater = async (loggedInUser, paramsData) => {
 
   const videoExists = await Video.findById(validIds[videoId]).select("_id");
 
-  console.log("video: ", videoExists);
-
   if (!videoExists) {
     throw new ApiError(404, "Video not found");
   }
@@ -27,7 +25,6 @@ const addWatchLater = async (loggedInUser, paramsData) => {
     video: videoExists._id,
     owner: loggedInUser,
   });
-  console.log("watchLater: ", videoInWatchLater);
 
   if (videoInWatchLater) {
     throw new ApiError(400, "Video already exists in Watch Later");
@@ -52,33 +49,35 @@ const addWatchLater = async (loggedInUser, paramsData) => {
 const removeWatchLater = async (loggedInUser, paramsData) => {
   // TODO: video remove from watch later
   const { videoId } = paramsData;
-
+  
+   // Validate and create ObjectId instance for videoId
   const validIds = isValidObjectId([videoId]);
 
   if (!validIds[videoId]) {
     throw new ApiError(400, "Invalid VideoId Format");
   }
 
+  // Check if the video exists in Watch Later
   const videoRemoveFromWatchLater = await WatchLater.findOne({
     video: validIds[videoId],
   });
-  console.log("videoRemoveFromWatchLater", videoRemoveFromWatchLater);
 
   if (!videoRemoveFromWatchLater) {
     throw new ApiError(400, "Video doesn't exist in Watch Later");
   }
 
+  // Validate owner authorization
   if (videoRemoveFromWatchLater?.owner.toString() !== loggedInUser.toString()) {
     throw new ApiError(
       400,
       "Only authorized Owner can remove the video from Watch Later"
     );
   }
-
+  // Remove the video from Watch Later
   await WatchLater.findByIdAndDelete(videoRemoveFromWatchLater._id);
 };
 
-//Remove All History
+//Remove All Watch Later
 const removeAllWatchLater = async (loggedInUser, paramsData) => {
   // TODO: All video remove from history
   const { owner } = paramsData;
@@ -94,14 +93,12 @@ const removeAllWatchLater = async (loggedInUser, paramsData) => {
     throw new ApiError(400, "Video doesn't exist in Watch Later");
   }
 
-  dataToFetch.map((field) => {
+   // Validate authorization using for...of loop
+   for (const field of dataToFetch) {
     if (field.owner.toString() !== loggedInUser.toString()) {
-      throw new ApiError(
-        400,
-        "Only authorized User can remove the Watch Later list"
-      );
+      throw new ApiError(400, "Only authorized User can remove the Watch Later list");
     }
-  });
+  }
   const removeAllWatchLater = await WatchLater.deleteMany({
     owner: validIds[owner],
   });
@@ -109,8 +106,19 @@ const removeAllWatchLater = async (loggedInUser, paramsData) => {
   return removeAllWatchLater;
 };
 
+// Get All Watch Later
+const getAllWatchLater = async(loggedInUser) => {
+    const fetchAllWatchLater = await WatchLater.find({ owner: loggedInUser }).populate("video");
+
+    if(!fetchAllWatchLater || fetchAllWatchLater.length === 0) {
+        throw new ApiError(404, "Watch Later Not Found");
+    }
+
+    return fetchAllWatchLater;
+}
 export default {
   addWatchLater,
   removeWatchLater,
   removeAllWatchLater,
+  getAllWatchLater
 };

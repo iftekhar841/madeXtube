@@ -18,7 +18,7 @@ const addWatchLater = asyncHandler(async(req, res) => {
     } catch (error) {
         return res
         .status(500)
-        .json( new ApiError( { statucode: error.status, message: error.message }))
+        .json( new ApiError( { statucode: error.statucode, message: error.message }))
     }
 })
 
@@ -37,7 +37,7 @@ const removeWatchLater = asyncHandler(async(req, res) => {
     } catch (error) {
         return res
         .status(500)
-        .json( new ApiError( { statucode: error.status, message: error.message }))
+        .json( new ApiError( { statucode: error.statucode, message: error.message }))
     }
 })
 
@@ -56,7 +56,26 @@ const removeAllWatchLater = asyncHandler(async(req, res) => {
     } catch (error) {
         return res
         .status(500)
-        .json( new ApiError( { statucode: error.status, message: error.message }))
+        .json( new ApiError( { statucode: error.statucode, message: error.message }))
+    }
+})
+
+
+// Get All watch later Controller to handle the API request and response
+const getAllWatchLater = asyncHandler(async(req, res) => {
+    try {
+        const loggedInUser = req.user?._id;
+        const removeWatchLaterResponse = await addWatchLaterService.getAllWatchLater(
+            loggedInUser
+        );
+
+        return res
+        .status(200)
+        .json( new ApiResponse(200, removeWatchLaterResponse, "All Watch Later list removed Successfully."))
+    } catch (error) {
+        return res
+        .status(500)
+        .json( new ApiError( { statucode: error.statucode, message: error.message }))
     }
 })
 
@@ -64,5 +83,6 @@ const removeAllWatchLater = asyncHandler(async(req, res) => {
 export default {
     addWatchLater,
     removeWatchLater,
-    removeAllWatchLater
+    removeAllWatchLater,
+    getAllWatchLater
 }

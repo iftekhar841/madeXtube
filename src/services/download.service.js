@@ -1,8 +1,7 @@
 import { Download } from "../models/download.model.js";
 import { Video } from "../models/videos.models.js";
 import { ApiError } from "../utils/ApiError.js";
-// import {  isValidObjectId } from "../utils/helperFunctions.js";
-import { isValidObjectId } from "mongoose";
+import {  isValidObjectId } from "../utils/helperFunctions.js";
 
 // To add download video in the download tab
 const addDownloadVideo = async (paramsData, loggedInUser) => {
@@ -18,7 +17,8 @@ const addDownloadVideo = async (paramsData, loggedInUser) => {
     throw new ApiError(400, "Video dees not exists");
   }
 
-  const videoInDownload = await Download.findOne({ video: videoId });
+  const videoInDownload = await Download.findOne({ video: videoId, owner: loggedInUser });
+  console.log("videoInDownload", videoInDownload);
 
   if (videoInDownload) {
     throw new ApiError(400, "Video already exists in download");
@@ -46,11 +46,13 @@ const deleteDownloadVideo = async (paramsData, loggedInUser) => {
   // TODO: video remove from Download
   const { videoId } = paramsData;
 
-  if (!isValidObjectId(videoId)) {
+  const validIds = isValidObjectId([videoId]);
+
+  if (!validIds[videoId]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
-  const videoRemoveFromDownload = await Download.findOne({ video: videoId });
+  const videoRemoveFromDownload = await Download.findOne({ video: validIds[videoId] });
   console.log("video remove from Download", videoRemoveFromDownload);
 
   if (!videoRemoveFromDownload) {
