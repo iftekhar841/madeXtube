@@ -60,6 +60,7 @@ const removeWatchLater = async (loggedInUser, paramsData) => {
   // Check if the video exists in Watch Later
   const videoRemoveFromWatchLater = await WatchLater.findOne({
     video: validIds[videoId],
+    owner: loggedInUser
   });
 
   if (!videoRemoveFromWatchLater) {
