@@ -6,7 +6,7 @@ import morgan from "morgan";
 const app = express();
 
 // Use morgan middleware with the "dev" format
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 app.use(
   cors({
@@ -21,7 +21,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 //routes imports
-import user_route from './routes/user.routes.js';
+import user_route from "./routes/user.routes.js";
 import video_route from "./routes/videos.routes.js";
 import category_route from "./routes/categories.routes.js";
 import channel_route from "./routes/channel.route.js";
@@ -46,11 +46,7 @@ app.use("/api/v1/downloads", download_route);
 app.use("/api/v1/history", history_route);
 app.use("/api/v1/subscriptions", subscription_route);
 app.use("/api/v1/watchLater", watchLater_route);
-app.use("/api/v1/playlists", playlist_route);
-
-
-
-
+app.use("/api/v1", playlist_route);
 
 //http://localhost:8000/api/v1/users/register
 

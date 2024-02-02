@@ -6,26 +6,43 @@ import playlistController from "../controllers/playlist.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { mongoIdPathVariableValidator } from "../validators/common/mongodb.validators.js";
 
+playlist_route.get(
+  "/playlists/users/:userId",
+  mongoIdPathVariableValidator("userId"),
+  playlistController.getUserPlayLists
+);
+
+playlist_route.use(verifyJWT); //Apply verifyJWT middleware to all routes in this file
+
 playlist_route.post(
-  "/add-playlist/:videoId",
+  "/playlists/videos/:videoId",
   mongoIdPathVariableValidator("videoId"),
-  verifyJWT,
   playlistController.createPlayList
 );
 
+playlist_route.post(
+  "/playlists/:playListId/videos",
+  mongoIdPathVariableValidator("playListId"),
+  playlistController.addVideoToPlayList
+);
 
 playlist_route.patch(
-    "/edit-playlist/:playListId",
-    mongoIdPathVariableValidator("playListId"),
-    verifyJWT,
-    playlistController.updatePlayList
+  "/playlists/:playListId",
+  mongoIdPathVariableValidator("playListId"),
+  playlistController.updatePlayList
 );
 
 playlist_route.delete(
-    "/delete-playlist/:playListId",
-    mongoIdPathVariableValidator("playListId"),
-    verifyJWT,
-    playlistController.deletePlayList
-  );
+  "/playlists/:playListId",
+  mongoIdPathVariableValidator("playListId"),
+  playlistController.deleteSinglePlayList
+);
+
+playlist_route.delete(
+  "/playlists/:playListId/videos/:videoId",
+  mongoIdPathVariableValidator("playListId"),
+  mongoIdPathVariableValidator("videoId"),
+  playlistController.removeSingleVideoFromPlayList
+);
 
 export default playlist_route;
