@@ -8,6 +8,7 @@ import {
 } from "../utils/helperFunctions.js";
 import { Channel } from "../models/channel.model.js";
 import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
+import { Category } from "../models/categories.model.js";
 
 //Created videos
 const createVideos = async (
@@ -387,32 +388,18 @@ const getAllVideoByCategoryId = async (paramsData) => {
 };
 
 //  Get all the video by using of shortsId
-const getAllVideoByShortsId = async (paramsData, queryData) => {
-  const { shortsId } = paramsData;
+const getAllVideoByShortsId = async (queryData) => {
   const { page = 1, limit = 12 } = queryData;
 
-  const isValidShortsId = isValidObjectId([shortsId]);
-
-  if (!isValidShortsId[shortsId]) {
-    throw new ApiError(404, "Invalid ObjectId Format");
-  }
-
-  // const shortsExists = await Category.findById(isValidShortsId[shortsId]);
-  // console.log("ShortsExists", shortsExists);
-
-  // Check existing category
-  const shortsExists = await getCategoryObjectId(isValidShortsId[shortsId]);
-  console.log("exisng short", shortsExists);
+  const shortsExists = await Category.findOne({ categoryName: "Shorts" });
 
   if (!shortsExists) {
-    throw new ApiError(400, "Shorts does not exists");
+    throw new ApiError(400, "Shorts does not exist");
   }
 
   const shortsVideoAggregate = await Video.aggregate([
     {
-      $match: {
-        videoCategory: shortsExists,
-      },
+      $match: { videoCategory: shortsExists._id },
     },
     {
       $lookup: {
@@ -422,9 +409,7 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
         as: "channelData",
       },
     },
-    {
-      $unwind: "$channelData",
-    },
+    { $unwind: "$channelData" },
     {
       $lookup: {
         from: "users",
@@ -433,9 +418,7 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
         as: "ownerData",
       },
     },
-    {
-      $unwind: "$ownerData",
-    },
+    { $unwind: "$ownerData" },
     {
       $lookup: {
         from: "categories",
@@ -444,9 +427,7 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
         as: "videoCategoryData",
       },
     },
-    {
-      $unwind: "$videoCategoryData",
-    },
+    { $unwind: "$videoCategoryData" },
     {
       $addFields: {
         "channelData.owner": {
@@ -487,7 +468,7 @@ const getAllVideoByShortsId = async (paramsData, queryData) => {
     },
   ]);
 
-  if (shortsVideoAggregate && shortsVideoAggregate.length === 0) {
+  if (!shortsVideoAggregate[0].shortsVideos.length) {
     throw new ApiError(404, "No Shorts Video Found");
   }
 

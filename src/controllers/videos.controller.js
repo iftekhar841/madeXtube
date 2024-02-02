@@ -136,7 +136,6 @@ const getAllVideoByCategoryId = asyncHandler(async (req, res) => {
 const getAllVideoByShortsId = asyncHandler(async (req, res) => {
   try {
     const shortsVideoRespoonse = await videosService.getAllVideoByShortsId(
-      req.params,
       req.query
     );
     return res

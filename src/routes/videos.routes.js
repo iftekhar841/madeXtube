@@ -43,10 +43,6 @@ video_route.get(
   videosController.getAllVideoByCategoryId
 );
 
-video_route.get(
-  "/shorts/:shortsId",
-  mongoIdPathVariableValidator("shortsId"),
-  videosController.getAllVideoByShortsId
-);
+video_route.get("/shorts", videosController.getAllVideoByShortsId);
 
 export default video_route;
