@@ -22,7 +22,17 @@ const createVideos = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, videoResponse, "Video created Successfully."));
   } catch (error) {
-    console.log("error inside catch block", error);
+    // Check if the error is due to undefined properties and handle it accordingly
+    if (error.message.includes("Cannot read properties of undefined")) {
+      return res
+        .status(400)
+        .json(
+          new ApiError({
+            message: "Invalid request. Please provide video files.",
+          })
+        );
+    }
+
     // Handle errors and return an appropriate error response
     return res
       .status(500)
