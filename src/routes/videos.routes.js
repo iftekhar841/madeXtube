@@ -31,6 +31,8 @@ video_route.patch(
   videosController.updateViewVideo
 );
 
+video_route.put("/toggle/publish/:videoId/users/:userId", verifyJWT, videosController.togglePublishVideo);
+
 video_route.get(
   "/getByChannelId/:channelId",
   mongoIdPathVariableValidator("channelId"),

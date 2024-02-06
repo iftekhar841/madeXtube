@@ -275,6 +275,41 @@ const updateViewVideo = async (paramsData) => {
   return viewToUpdate;
 };
 
+// Update the visibility of the video
+const togglePublishVideo = async(paramsData, loggedInUser) => {
+   const { videoId, userId } = paramsData;
+   console.log("videoId: " + videoId);
+
+   const validIds = isValidObjectId([videoId, userId]);
+
+   if(!validIds[videoId] || !validIds[userId]) {
+    throw new ApiError(400, "Invalid VideoId or UserId Format");
+   }    
+
+  if(validIds[userId].toString() !== loggedInUser.toString()) {
+    throw new ApiError(400, "Only authorize users can change the visibility of the video");
+  }
+
+   const videoToFetch = await Video.findOne({ _id: validIds[videoId] });
+   console.log("videoToFetch", videoToFetch);
+
+   if(!videoToFetch) {
+    throw new ApiError(404, "Video not found");
+   }
+
+   const togglePublishVideoUpdate = await Video.updateOne(
+    { _id: validIds[videoId]},
+    {
+      $set: { isPublished:  !videoToFetch.isPublished }
+    },
+    {
+      new: true
+    }
+   );
+
+   return togglePublishVideoUpdate;
+}
+
 //  Get all the video by using of channelId
 const getAllVideoByChannelId = async (paramsData) => {
   const { channelId } = paramsData;
@@ -480,6 +515,7 @@ export default {
   getAllVideos,
   getSingleVideoById,
   updateViewVideo,
+  togglePublishVideo,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
   getAllVideoByShortsId,

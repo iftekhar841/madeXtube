@@ -24,6 +24,14 @@ const registerUser = asyncHandler(async (req, res) => {
         new ApiResponse(201, userResponse, "User registered Successfully.")
       );
   } catch (error) {
+    // Check if the error is due to undefined properties and handle it accordingly
+    if (error.message.includes("Cannot read properties of undefined")) {
+      return res
+        .status(400)
+        .json(
+          new ApiError({ message: "Invalid request. Please provide files." })
+        );
+    }
     // Handle errors and return an appropriate error response
     return res
       .status(500)
@@ -89,9 +97,19 @@ const logoutUser = asyncHandler(async (req, res) => {
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   try {
     console.log("requesting ", req.user._id);
-    const response = await userService.getUserChannelProfile(req.params, req.user._id);
-     return res
-     .status(200).json( new ApiResponse(200, response, "User Channel Profile fetched successfully"));
+    const response = await userService.getUserChannelProfile(
+      req.params,
+      req.user._id
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          "User Channel Profile fetched successfully"
+        )
+      );
   } catch (error) {
     return res
       .status(500)
@@ -99,12 +117,11 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         new ApiError({ statusCode: error.statusCode, message: error.message })
       );
   }
-
-})
+});
 
 export default {
   registerUser,
   loginUser,
   logoutUser,
-  getUserChannelProfile
+  getUserChannelProfile,
 };

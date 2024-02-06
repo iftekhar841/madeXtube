@@ -24,13 +24,11 @@ const createVideos = asyncHandler(async (req, res) => {
   } catch (error) {
     // Check if the error is due to undefined properties and handle it accordingly
     if (error.message.includes("Cannot read properties of undefined")) {
-      return res
-        .status(400)
-        .json(
-          new ApiError({
-            message: "Invalid request. Please provide video files.",
-          })
-        );
+      return res.status(400).json(
+        new ApiError({
+          message: "Invalid request. Please provide video files.",
+        })
+      );
     }
 
     // Handle errors and return an appropriate error response
@@ -88,6 +86,25 @@ const updateViewVideo = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(new ApiResponse(200, viewResponse, "The view has been increased."));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+});
+
+const togglePublishVideo = asyncHandler(async (req, res) => {
+  try {
+    const loggedInUser = req.user._id;
+    const publishVideoResponse = await videosService.togglePublishVideo(
+      req.params,
+      loggedInUser  
+    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, publishVideoResponse, "Video publish toggled successfully"));
   } catch (error) {
     return res
       .status(500)
@@ -171,6 +188,7 @@ export default {
   getAllVideos,
   getSingleVideoById,
   updateViewVideo,
+  togglePublishVideo,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
   getAllVideoByShortsId,
