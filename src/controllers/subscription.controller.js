@@ -53,6 +53,7 @@ const unsubcribeChannel = asyncHandler(async (req, res) => {
 
 const checkIsSubcribe = asyncHandler(async (req, res) => {
   try {
+    console.log("req.params", req.params);
     const isSubscribeResponse = await subscriptionService.checkIsSubcribe(
       req.params
     );
