@@ -51,7 +51,31 @@ const unsubcribeChannel = asyncHandler(async (req, res) => {
   }
 });
 
+const checkIsSubcribe = asyncHandler(async (req, res) => {
+  try {
+    const isSubscribeResponse = await subscriptionService.checkIsSubcribe(
+      req.params
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          isSubscribeResponse,
+          "subscribe fetch successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+});
+
 export default {
   createSubscription,
   unsubcribeChannel,
+  checkIsSubcribe
 };

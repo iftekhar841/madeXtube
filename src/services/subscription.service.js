@@ -3,8 +3,10 @@ import { User } from "../models/user.models.js";
 import { Channel } from "../models/channel.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 
+// Create Subscribe methods
 const createSubscription = async (loggedInUser, paramsData) => {
     const { userId, channelId } = paramsData;
 
@@ -79,7 +81,35 @@ const unsubcribeChannel = async(loggedInUser, paramsData, bodyData) => {
     return dataToUnsubscribed;
 }
 
+const checkIsSubcribe = async(paramsData) => {
+
+    const { userId, channelId } = paramsData;
+
+    const validIds = isValidObjectId([userId, channelId]);
+
+    if(!validIds[userId] || !validIds[channelId]) {
+        throw new ApiError(400, "Invalid userId or ChannelId format");
+    }
+
+    const userExistsId = await getUserObjectId(validIds[userId]);
+
+    const fetchSubcribed = await Subscription.findOne({ subscriber: userExistsId, channel: validIds[channelId]})
+    console.log("fetchSubcribed", fetchSubcribed);
+
+    if(!fetchSubcribed) {
+        return {
+            isSubscribed: false,
+            message: "You haven't subcribed Yet!, Sign in then subcribe"
+        }
+    } else {
+        return {
+            isSubscribed: true,
+            message: "You have already subscribed"
+        }
+    }
+}
 export default {
     createSubscription,
-    unsubcribeChannel
+    unsubcribeChannel,
+    checkIsSubcribe
 }
