@@ -22,5 +22,5 @@ subscription_route.delete(
 );
 
 
-subscription_route.get("/check-subscribe/:userId/:channelId", verifyJWT,subscriptionController.checkIsSubcribe);
+subscription_route.get("/check-subscribe/:userId/:channelId", subscriptionController.checkIsSubcribe);
 export default subscription_route;
