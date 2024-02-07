@@ -172,6 +172,49 @@ const getUserPlayLists = async (paramsData) => {
   if (!validIds[userId]) {
     throw new ApiError(400, "Invalid userId");
   }
+  //   {
+  //     $match: {
+  //       owner: validIds[userId],
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "videos",
+  //       localField: "videos",
+  //       foreignField: "_id",
+  //       as: "videos",
+  //     },
+  //   },
+  // ]);
+
+  // const playListsAggregate = await Playlist.aggregate([
+  //   {
+  //     $match: {
+  //       owner: validIds[userId],
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "videos",
+  //       localField: "videos",
+  //       foreignField: "_id",
+  //       as: "videos",
+  //     },
+  //   },
+  //   // Unwind the videos array to sort each video document
+  //   { $unwind: "$videos" },
+  //   // Sort the unwound videos by the orderIndex or another appropriate field
+  //   { $sort: { "videos.orderIndex": 1 } },
+  //   // Group back the sorted videos into an array
+  //   {
+  //     $group: {
+  //       _id: "$_id",
+  //       owner: { $first: "$owner" },
+  //       name: { $first: "$name" },
+  //       videos: { $push: "$videos" },
+  //     },
+  //   },
+  // ]);
 
   const playListsAggregate = await Playlist.aggregate([
     {
@@ -179,6 +222,8 @@ const getUserPlayLists = async (paramsData) => {
         owner: validIds[userId],
       },
     },
+    // Sort the playlists by createdAt or another field before populating videos
+    { $sort: { createdAt: 1 } },
     {
       $lookup: {
         from: "videos",
@@ -187,11 +232,25 @@ const getUserPlayLists = async (paramsData) => {
         as: "videos",
       },
     },
+    // Optional: If you want to keep the sorted videos logic
+    { $unwind: "$videos" },
+    { $sort: { "videos.orderIndex": 1 } },
+    {
+      $group: {
+        _id: "$_id",
+        owner: { $first: "$owner" },
+        name: { $first: "$name" },
+        createdAt: { $first: "$createdAt" }, // Make sure to include this if you're using it for sorting
+        videos: { $push: "$videos" },
+      },
+    },
+    // After regrouping, you might want to sort playlists again if $group changed the order
+    { $sort: { createdAt: 1 } },
+    
   ]);
 
   return playListsAggregate;
 };
-
 
 //Remove video from playlist
 const removeSingleVideoFromPlayList = async (paramsData, loggedInUser) => {
