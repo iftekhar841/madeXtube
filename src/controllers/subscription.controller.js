@@ -34,13 +34,12 @@ const unsubcribeChannel = asyncHandler(async (req, res) => {
     const loggedInUser = req.user._id;
     const unSubcribedResponse = await subscriptionService.unsubcribeChannel(
       loggedInUser,
-      req.params,
-      req.body
+      req.params
     );
     return res
       .status(200)
       .json(
-        new ApiResponse(200, unSubcribedResponse, "Unsubscribed Successfully")
+        new ApiResponse(200, unSubcribedResponse, "Subscription removed Successfully")
       );
   } catch (error) {
     return res

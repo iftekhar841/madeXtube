@@ -15,7 +15,7 @@ subscription_route.post(
 );
 
 subscription_route.delete(
-  "/unsubscribe/:userId",
+  "/unsubscribe/:userId/:channelId",
   verifyJWT,
   mongoIdPathVariableValidator("userId"),
   subscriptionController.unsubcribeChannel

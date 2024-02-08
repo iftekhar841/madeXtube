@@ -48,26 +48,25 @@ const createSubscription = async (loggedInUser, paramsData) => {
 }
 
 
-const unsubcribeChannel = async(loggedInUser, paramsData, bodyData) => {
-    const { userId } = paramsData;
+const unsubcribeChannel = async(loggedInUser, paramsData) => {
+    const { userId, channelId } = paramsData;
 
-    const { subcriberId } = bodyData;
 
     // if(!subcriberId) {
     //     throw new ApiError( 400, "All field are required" );
     // }
 
-    const validIds = isValidObjectId([loggedInUser, subcriberId]);
+    const validIds = isValidObjectId([userId, channelId]);
 
-    if(!validIds[loggedInUser] || !validIds[subcriberId]) {
+    if(!validIds[userId] || !validIds[channelId]) {
         throw new ApiError(404, "Invalid ObjectId Format or Missing Fields");
     }
 
-    const subscriberExits = await Subscription.findOne({ subscriber: userId, _id: validIds[subcriberId] });
+    const subscriberExits = await Subscription.findOne({ subscriber: validIds[userId], channel: validIds[channelId] });
 
-    console.log("subscribeExits", subscriberExits);
+    console.log("subscribeExits--------->", subscriberExits);
 
-    if(subscriberExits?.subscriber.toString() !== validIds[loggedInUser].toString()) {
+    if(subscriberExits?.subscriber.toString() !== loggedInUser.toString()) {
         throw new ApiError( 400,
             "Only authorized Owner can unsubscribed the channel")
     }
