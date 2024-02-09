@@ -22,9 +22,9 @@ const addDownloadVideo = async (paramsData, loggedInUser) => {
   const videoInDownload = await Download.findOne({ video: validIds[videoId], owner: loggedInUser });
   console.log("videoInDownload", videoInDownload);
 
-  if (videoInDownload) {
-    throw new ApiError(400, "Video already exists in download");
-  }
+  // if (videoInDownload) {
+  //   throw new ApiError(400, "Video already exists in download");
+  // }
 
   const videoToDownload = new Download({
     video: existingVideo._id,

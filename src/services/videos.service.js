@@ -518,5 +518,5 @@ export default {
   togglePublishVideo,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
-  getAllVideoByShortsId,
+  getAllVideoByShortsId
 };

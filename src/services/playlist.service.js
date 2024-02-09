@@ -240,6 +240,7 @@ const getUserPlayLists = async (paramsData) => {
         _id: "$_id",
         owner: { $first: "$owner" },
         name: { $first: "$name" },
+        description: { $first: "$description" },
         createdAt: { $first: "$createdAt" }, // Make sure to include this if you're using it for sorting
         videos: { $push: "$videos" },
       },
