@@ -212,9 +212,21 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
   return channel[0];
 };
 
+const getAllUsers = async () => {
+  const totalUsers = await User.countDocuments();
+  console.log("Total users: " , typeof totalUsers);
+
+  if (!totalUsers) {
+    throw new ApiError(404, "No users found");
+  }
+  
+  return totalUsers;
+}
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
   getUserChannelProfile,
+  getAllUsers
 };

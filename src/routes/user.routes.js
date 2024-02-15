@@ -26,4 +26,7 @@ user_route.get(
   userController.getUserChannelProfile
 );
 
+user_route.get("/total-users", userController.getAllUsers);
+
 export default user_route;
+

@@ -119,9 +119,30 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   }
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const response = await userService.getAllUsers();
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          "All users fetched successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+});
 export default {
   registerUser,
   loginUser,
   logoutUser,
   getUserChannelProfile,
+  getAllUsers
 };
