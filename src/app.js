@@ -33,6 +33,7 @@ import history_route from "./routes/history.route.js";
 import subscription_route from "./routes/subscription.route.js";
 import watchLater_route from "./routes/watchLater.route.js";
 import playlist_route from "./routes/playlist.route.js";
+import comment_route from "./routes/comment.route.js";
 
 //routes declaration
 app.use("/api/v1/users", user_route);
@@ -47,6 +48,7 @@ app.use("/api/v1/history", history_route);
 app.use("/api/v1/subscriptions", subscription_route);
 app.use("/api/v1/watchLater", watchLater_route);
 app.use("/api/v1", playlist_route);
+app.use("/api/v1/comment", comment_route);
 
 //http://localhost:8000/api/v1/users/register
 
