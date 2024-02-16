@@ -12,34 +12,37 @@ playlist_route.get(
   playlistController.getUserPlayLists
 );
 
-playlist_route.use(verifyJWT); //Apply verifyJWT middleware to all routes in this file
-
 playlist_route.post(
   "/playlists/videos/:videoId",
+  verifyJWT,
   mongoIdPathVariableValidator("videoId"),
   playlistController.createPlayList
 );
 
 playlist_route.post(
   "/playlists/:playListId/videos",
+  verifyJWT,
   mongoIdPathVariableValidator("playListId"),
   playlistController.addVideoToPlayList
 );
 
 playlist_route.patch(
   "/playlists/:playListId",
+  verifyJWT,
   mongoIdPathVariableValidator("playListId"),
   playlistController.updatePlayList
 );
 
 playlist_route.delete(
   "/playlists/:playListId",
+  verifyJWT,
   mongoIdPathVariableValidator("playListId"),
   playlistController.deleteSinglePlayList
 );
 
 playlist_route.delete(
   "/playlists/:playListId/videos/:videoId",
+  verifyJWT,
   mongoIdPathVariableValidator("playListId"),
   mongoIdPathVariableValidator("videoId"),
   playlistController.removeSingleVideoFromPlayList

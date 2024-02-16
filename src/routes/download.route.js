@@ -6,14 +6,12 @@ import  downloadController  from "../controllers/download.controller.js";
 
 const download_route = Router();
 
-download_route.use(verifyJWT); //Apply verifyJWT middleware to all routes in this file
+download_route.post('/:videoId', verifyJWT, mongoIdPathVariableValidator('videoId'), downloadController.addDownloadVideo);
 
-download_route.post('/:videoId', mongoIdPathVariableValidator('videoId'), downloadController.addDownloadVideo);
+download_route.delete('/delete-single-video/:videoId', verifyJWT, mongoIdPathVariableValidator('videoId'), downloadController.deleteDownloadVideo);
 
-download_route.delete('/delete-single-video/:videoId', mongoIdPathVariableValidator('videoId'), downloadController.deleteDownloadVideo);
+download_route.delete('/delete-all', verifyJWT, downloadController.deleteAllDownloadVideo);
 
-download_route.delete('/delete-all', downloadController.deleteAllDownloadVideo);
-
-download_route.get('/all-download-video', downloadController.getAllDownloadVideo);
+download_route.get('/all-download-video', verifyJWT, downloadController.getAllDownloadVideo);
 
 export default download_route;

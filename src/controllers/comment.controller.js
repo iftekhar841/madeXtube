@@ -80,9 +80,11 @@ const getAllCommentsBySingleVideo = asyncHandler(async (req, res) => {
     }
 })
 
+
+
 export default {
     createComment,
     updateComment,
     deleteComment,
-    // getAllCommentsBySingleVideo
+    getAllCommentsBySingleVideo
 }

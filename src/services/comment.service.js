@@ -3,6 +3,9 @@ import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/videos.models.js";
 import { ApiError } from "../utils/ApiError.js";
 
+
+
+// Create API's Methods For Comments
 const createComment = async (bodyData, paramsData, loggedInUser) => {
   const { content } = bodyData;
   const { ownerId, videoId } = paramsData;
@@ -38,6 +41,7 @@ const createComment = async (bodyData, paramsData, loggedInUser) => {
   return commentToSave;
 };
 
+// Update API's Methods For Comments
 const updateComment = async (bodyData, paramsData, loggedInUser) => {
   const { commentId } = paramsData;
   const { content } = bodyData;
@@ -56,10 +60,9 @@ const updateComment = async (bodyData, paramsData, loggedInUser) => {
     _id: commentId,
     owner: loggedInUser,
   }).select("_id owner");
-  console.log("Fetching comment", fetchComment);
 
   if (!fetchComment) {
-    throw new ApiError(404, "Neither Comment nor user is logged in");
+    throw new ApiError(404, "Neither Comment Exists Nor User LoggedIn");
   }
 
   const updatedComment = await Comment.findByIdAndUpdate(
@@ -76,9 +79,10 @@ const updateComment = async (bodyData, paramsData, loggedInUser) => {
     throw new ApiError(400, "Failed to update the comment, try again");
   }
 
-  return updatedComment.content;
+  return updatedComment;
 };
 
+// Delete API's Methods For Comments
 const deleteComment = async (paramsData, loggedInUser) => {
   // TODO: delete a comment
   const { commentId } = paramsData;
@@ -94,7 +98,6 @@ const deleteComment = async (paramsData, loggedInUser) => {
     _id: commentId,
     owner: loggedInUser,
   }).select("_id owner");
-  console.log("Fetching comment", fetchCommentAndDelete);
 
   if (!fetchCommentAndDelete) {
     throw new ApiError(404, "Neither Comment exists nor User logged in");
@@ -103,29 +106,37 @@ const deleteComment = async (paramsData, loggedInUser) => {
   return fetchCommentAndDelete;
 };
 
-// const getAllCommentsBySingleVideo = async (paramsData) => {
-//   const { videoId } = paramsData;
 
-//   const validIds = isValidObjectId([videoId]);
+// Get API's Methods For Comments
+const getAllCommentsBySingleVideo = async (paramsData) => {
+  const { videoId } = paramsData;
 
-//   if (!validIds[videoId]) {
-//     throw new ApiError(400, "Invalid VideoId Format");
-//   }
+  const validIds = isValidObjectId([videoId]);
 
-// //   const videoExists = await Video.findById(validIds[videoId]).select("_id");
-// //   console.log("Video exists", videoExists);
-// //   if (!videoExists) {
-// //     throw new ApiError(404, "Video not found");
-// //   }
+  if (!validIds[videoId]) {
+    throw new ApiError(400, "Invalid VideoId Format");
+  }
 
-//   const comments = await Comment.find({ video: validIds[videoId]} );
+  const existingVideo = await Video.findById(videoId).select("_id");
 
-//   return comments;
-// };
+  if (!existingVideo) {
+    throw new ApiError(404, "Video doesn't exists");
+  }
+
+  const dataToFetch = await Comment.find({ video: validIds[videoId] })
+    .populate("owner", "username avatar -_id")
+    .select("-video");
+
+  if (!dataToFetch && dataToFetch.length === 0) {
+    throw new ApiError(404, "Comments not found");
+  }
+
+  return dataToFetch;
+};
 
 export default {
   createComment,
   updateComment,
   deleteComment,
-  // getAllCommentsBySingleVideo,
+  getAllCommentsBySingleVideo,
 };

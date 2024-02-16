@@ -12,15 +12,15 @@ likeAndDislikeRoute.get(
   videoLikeAndDislikeController.getAllLikeVideo
 );
 
-likeAndDislikeRoute.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
-
 likeAndDislikeRoute.post(
   "/like/:videoId/:userId",
+  verifyJWT,
   videoLikeAndDislikeController.createLikeVideo
 );
 
 likeAndDislikeRoute.post(
   "/dislike/:videoId/:userId",
+  verifyJWT,
   videoLikeAndDislikeController.createdisLikeVideo
 );
 
