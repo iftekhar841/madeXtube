@@ -48,7 +48,7 @@ app.use("/api/v1/history", history_route);
 app.use("/api/v1/subscriptions", subscription_route);
 app.use("/api/v1/watchLater", watchLater_route);
 app.use("/api/v1", playlist_route);
-app.use("/api/v1/comment", comment_route);
+app.use("/api/v1", comment_route);
 
 //http://localhost:8000/api/v1/users/register
 

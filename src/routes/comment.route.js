@@ -6,26 +6,26 @@ const comment_route = Router();
 
 // Apply verifyJWT middleware only to routes where authentication is required
 comment_route.post(
-  '/create-comment/users/:ownerId/videos/:videoId',
+  '/comments/users/:ownerId/videos/:videoId',
   verifyJWT,
   commentController.createComment
 );
 
 comment_route.patch(
-  '/update-comment/:commentId',
+  '/comments/:commentId', 
   verifyJWT,
   commentController.updateComment
 );
 
 comment_route.delete(
-  '/delete-comment/:commentId',
+  '/comments/:commentId',
   verifyJWT,
   commentController.deleteComment
 );
 
 // Exclude verifyJWT middleware for this route
 comment_route.get(
-  '/get-all-comments/videos/:videoId',
+  '/comments/videos/:videoId',
   commentController.getAllCommentsBySingleVideo
 );
 

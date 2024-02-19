@@ -17,7 +17,7 @@ const createComment = asyncHandler(async (req, res) => {
        
         return res
         .status(201)
-        .json( new ApiResponse(201, "Comment created", commentResponse) );
+        .json( new ApiResponse(201, commentResponse, "Comment created") );
     } catch (error) {
         return res
       .status(500)
@@ -38,7 +38,7 @@ const updateComment = asyncHandler(async (req, res) => {
        
         return res
         .status(200)
-        .json( new ApiResponse(200, "Comment Updated", commentResponse) );
+        .json( new ApiResponse(200, commentResponse, "Comment Updated") );
     } catch (error) {
         return res
       .status(500)
@@ -58,7 +58,7 @@ const deleteComment = asyncHandler(async (req, res) => {
        
         return res
         .status(200)
-        .json( new ApiResponse(200, "Comment deleted successfully", commentResponse) );
+        .json( new ApiResponse(200, commentResponse, "Comment deleted successfully",) );
     } catch (error) {
         return res
       .status(500)
@@ -72,7 +72,7 @@ const getAllCommentsBySingleVideo = asyncHandler(async (req, res) => {
         const commentResponse = await commentService.getAllCommentsBySingleVideo(req.params);
         return res
         .status(200)
-        .json( new ApiResponse(200, "Comment Fetched successfully", commentResponse) );
+        .json( new ApiResponse(200, commentResponse, "Comment Fetched successfully" ) );
     } catch (error) {
         return res
       .status(500)
