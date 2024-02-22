@@ -34,10 +34,12 @@ const videoSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Channel",
     },
-    videoCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "Category",
-    },
+    videoCategory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ]
   },
   { timestamps: true }
 );

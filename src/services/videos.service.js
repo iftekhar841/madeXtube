@@ -16,51 +16,64 @@ const createVideos = async (
   videoFileLocalPath,
   thumbnailLocalPath
 ) => {
-  const { title, description, views, channelId, categoryId } = videoDetails;
+  const { title, description, views, channelId, categoryIds } = videoDetails;
 
-  if (!(channelId && categoryId)) {
+  if (!(channelId && categoryIds && categoryIds.length > 0)) {
     throw new ApiError(
       404,
       "channelId and categoryId are required and cannot be empty"
     );
   }
-  const channels = await Channel.findById({ _id: channelId }).select("_id");
-  console.log("channels", channels);
+
+  // Fetch channel and categories in parallel
+  const [channels, categories] = await Promise.all([
+    Channel.findById({ _id: channelId }).select("_id"),
+    Category.find({ _id: { $in: categoryIds } }),
+  ]);
 
   if (!channels) {
     throw new ApiError(404, "channels does not exist");
   }
+  // Extract category IDs
+  const multipleCategoryIds = categories.map((category) => category._id);
 
-  const videoCategoryId = await getCategoryObjectId(categoryId);
-
+  // Check if video file and thumbnail are provided
   if (!videoFileLocalPath || !thumbnailLocalPath) {
-    throw new ApiError(400, "video file is required");
-  }
-
-  const video = await uploadOnCloudinary(videoFileLocalPath);
-  const formattedDuration = formatDuration(video.duration); // Convert duration seconds into this format HH:MM:SS.
-
-  const thumbnailImage = await uploadOnCloudinary(thumbnailLocalPath);
-
-  if (!video || !thumbnailImage) {
     throw new ApiError(400, "video file and thumbnail are required");
   }
 
+  // Upload video file and thumbnail to cloudinary in parallel
+  const [video, thumbnailImage] = await Promise.all([
+    await uploadOnCloudinary(videoFileLocalPath),
+    await uploadOnCloudinary(thumbnailLocalPath),
+  ]);
+
+  if (!video || !video.duration) {
+    throw new ApiError(400, "Video upload failed or duration not available");
+  }
+
+  const formattedDuration = formatDuration(video.duration); // Convert duration seconds into this format HH:MM:SS.
+
+  if (!thumbnailImage) {
+    throw new ApiError(400, "Thumbnail upload failed");
+  }
+
+  // Create video document
   const videoData = await Video.create({
     title,
-    videoFile: video?.url || "",
-    thumbnail: thumbnailImage?.url || "",
+    videoFile: video.url || "",
+    thumbnail: thumbnailImage.url || "",
     description,
     duration: formattedDuration,
     views,
     channel: channels._id,
-    videoCategory: videoCategoryId,
+    videoCategory: multipleCategoryIds,
   });
 
   const dataToFetch = await Video.findById(videoData._id);
 
   if (!dataToFetch) {
-    throw new ApiError(500, "Something went wrong while fetching the video");
+    throw new ApiError(500, "Error fetching the video");
   }
   return dataToFetch;
 };
@@ -276,39 +289,42 @@ const updateViewVideo = async (paramsData) => {
 };
 
 // Update the visibility of the video
-const togglePublishVideo = async(paramsData, loggedInUser) => {
-   const { videoId, userId } = paramsData;
-   console.log("videoId: " + videoId);
+const togglePublishVideo = async (paramsData, loggedInUser) => {
+  const { videoId, userId } = paramsData;
+  console.log("videoId: " + videoId);
 
-   const validIds = isValidObjectId([videoId, userId]);
+  const validIds = isValidObjectId([videoId, userId]);
 
-   if(!validIds[videoId] || !validIds[userId]) {
+  if (!validIds[videoId] || !validIds[userId]) {
     throw new ApiError(400, "Invalid VideoId or UserId Format");
-   }    
-
-  if(validIds[userId].toString() !== loggedInUser.toString()) {
-    throw new ApiError(400, "Only authorize users can change the visibility of the video");
   }
 
-   const videoToFetch = await Video.findOne({ _id: validIds[videoId] });
-   console.log("videoToFetch", videoToFetch);
+  if (validIds[userId].toString() !== loggedInUser.toString()) {
+    throw new ApiError(
+      400,
+      "Only authorize users can change the visibility of the video"
+    );
+  }
 
-   if(!videoToFetch) {
+  const videoToFetch = await Video.findOne({ _id: validIds[videoId] });
+  console.log("videoToFetch", videoToFetch);
+
+  if (!videoToFetch) {
     throw new ApiError(404, "Video not found");
-   }
+  }
 
-   const togglePublishVideoUpdate = await Video.updateOne(
-    { _id: validIds[videoId]},
+  const togglePublishVideoUpdate = await Video.updateOne(
+    { _id: validIds[videoId] },
     {
-      $set: { isPublished:  !videoToFetch.isPublished }
+      $set: { isPublished: !videoToFetch.isPublished },
     },
     {
-      new: true
+      new: true,
     }
-   );
+  );
 
-   return togglePublishVideoUpdate;
-}
+  return togglePublishVideoUpdate;
+};
 
 //  Get all the video by using of channelId
 const getAllVideoByChannelId = async (paramsData) => {
@@ -518,5 +534,5 @@ export default {
   togglePublishVideo,
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
-  getAllVideoByShortsId
+  getAllVideoByShortsId,
 };
