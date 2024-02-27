@@ -542,7 +542,7 @@ const getAllLikedVideos = async (paramsData, loggedInUser) => {
   // Check existing user
   const existingUser = await getUserObjectId(validIds[userId]);
 
-  if (existingUser !== loggedInUser) {
+  if (existingUser.toString() !== loggedInUser.toString()) {
     throw new ApiError(
       400,
       "You are not authorized to view liked videos of another user"
