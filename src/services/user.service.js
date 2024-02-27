@@ -140,16 +140,13 @@ const logoutUser = async (userId) => {
 };
 
 const getUserChannelProfile = async (paramsData, requestUserId) => {
-  console.log("requestUserId", requestUserId);
-
   const { username } = paramsData;
-  console.log("params", paramsData);
+
   if (!username?.trim()) {
     throw new ApiError(400, "username is missing");
-    1;
   }
 
-  const channel = await User.aggregate([
+  const userAggregate = await User.aggregate([
     {
       $match: {
         username: username?.toLowerCase(),
@@ -162,29 +159,26 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
         foreignField: "channel",
         as: "subscribers",
       },
+    },
+    {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
-        as: "subscriberTo", //to whom subscribe
+        as: "subscribedTo", //to whom subscribe
       },
     },
     {
       $addFields: {
         subscribersCount: {
-          $size: { $ifNull: ["$subscribers", []] },
+          $size: "$subscribers",
         },
         channelsSubscribedToCount: {
-          $size: { $ifNull: ["$subscriberTo", []] },
+          $size: "$subscribedTo",
         },
         isSubscribed: {
           $cond: {
-            if: {
-              $in: [
-                requestUserId,
-                { $ifNull: ["$subscribers.subscriber", []] },
-              ],
-            },
+            if: { $in: [requestUserId, "$subscribers.subscriber"] },
             then: true,
             else: false,
           },
@@ -193,40 +187,40 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
     },
     {
       $project: {
-        fullName: 1,
+        _id: 1,
         username: 1,
-        email: 1,
-        subscribersCount: 1,
-        channelsSubscribedToCount: 1,
-        isSubscribed: 1,
+        fullName: 1,
         avatar: 1,
         coverImage: 1,
+        email: 1,
+        isSubscribed: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
       },
     },
   ]);
 
-  if (!channel?.length) {
+  if (!userAggregate?.length) {
     throw new ApiError(404, "Channel does not exists");
   }
 
-  return channel[0];
+  return userAggregate;
 };
 
 const getAllUsers = async () => {
   const totalUsers = await User.countDocuments();
-  console.log("Total users: " , typeof totalUsers);
 
   if (!totalUsers) {
     throw new ApiError(404, "No users found");
   }
-  
+
   return totalUsers;
-}
+};
 
 export default {
   registerUser,
   loginUser,
   logoutUser,
   getUserChannelProfile,
-  getAllUsers
+  getAllUsers,
 };

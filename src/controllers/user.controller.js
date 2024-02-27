@@ -99,7 +99,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     console.log("requesting ", req.user._id);
     const response = await userService.getUserChannelProfile(
       req.params,
-      req.user._id
+      req.user?._id
     );
     return res
       .status(200)

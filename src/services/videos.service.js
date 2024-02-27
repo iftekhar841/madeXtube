@@ -5,6 +5,7 @@ import {
   getCategoryObjectId,
   formatDuration,
   isValidObjectId,
+  getUserObjectId,
 } from "../utils/helperFunctions.js";
 import { Channel } from "../models/channel.model.js";
 import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
@@ -18,7 +19,7 @@ const createVideos = async (
 ) => {
   const { title, description, views, channelId, categoryIds } = videoDetails;
 
-  if (!(channelId && categoryIds && categoryIds.length > 0)) {
+  if (!channelId || !categoryIds || categoryIds.length === 0) {
     throw new ApiError(
       404,
       "channelId and categoryId are required and cannot be empty"
@@ -34,8 +35,6 @@ const createVideos = async (
   if (!channels) {
     throw new ApiError(404, "channels does not exist");
   }
-  // Extract category IDs
-  const multipleCategoryIds = categories.map((category) => category._id);
 
   // Check if video file and thumbnail are provided
   if (!videoFileLocalPath || !thumbnailLocalPath) {
@@ -58,6 +57,9 @@ const createVideos = async (
     throw new ApiError(400, "Thumbnail upload failed");
   }
 
+  // Extract category IDs
+  const categoryIdsArray = categories.map((category) => category._id);
+
   // Create video document
   const videoData = await Video.create({
     title,
@@ -67,7 +69,7 @@ const createVideos = async (
     duration: formattedDuration,
     views,
     channel: channels._id,
-    videoCategory: multipleCategoryIds,
+    videoCategory: categoryIdsArray,
   });
 
   const dataToFetch = await Video.findById(videoData._id);
@@ -526,6 +528,46 @@ const getAllVideoByShortsId = async (queryData) => {
   return shortsVideoAggregate[0];
 };
 
+//  Get all the Liked Videos by using of userId
+const getAllLikedVideos = async (paramsData, loggedInUser) => {
+  const { userId } = paramsData;
+
+  //Validate and create ObjectId instances for userId
+  const validIds = isValidObjectId([userId]);
+
+  if (!validIds[userId]) {
+    throw new ApiError(400, "Invalid userId Format");
+  }
+
+  // Check existing user
+  const existingUser = await getUserObjectId(validIds[userId]);
+
+  if (existingUser !== loggedInUser) {
+    throw new ApiError(
+      400,
+      "You are not authorized to view liked videos of another user"
+    );
+  }
+
+  // Find all video IDs liked by the user
+  const likedVideoIds = await VideoLikeAndDislike.find({
+    likedBy: existingUser,
+  }).distinct("videoId");
+
+  if (!likedVideoIds.length) {
+    throw new ApiError(404, "This user has not liked any video");
+  }
+
+  // Find details of liked videos from the Video model
+  const fetchLikedVideos = await Video.find({ _id: { $in: likedVideoIds } });
+
+  if (!fetchLikedVideos.length) {
+    throw new ApiError(404, "There are no liked videos");
+  }
+
+  return fetchLikedVideos;
+};
+
 export default {
   createVideos,
   getAllVideos,
@@ -535,4 +577,5 @@ export default {
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
   getAllVideoByShortsId,
+  getAllLikedVideos,
 };

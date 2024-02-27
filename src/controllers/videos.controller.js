@@ -184,6 +184,28 @@ const getAllVideoByShortsId = asyncHandler(async (req, res) => {
   }
 });
 
+const getAllLikedVideos = asyncHandler(async (req, res) =>{
+  try {
+    const loggedInUser = req.user?._id;
+    const likedVideosResponse = await videosService.getAllLikedVideos(req.params, loggedInUser);
+    return res
+     .status(200)
+     .json(
+        new ApiResponse(
+          200,
+          likedVideosResponse,
+          "Liked videos retrieved successfully"
+        )
+      );
+  } catch (error) {
+    return res
+     .status(500)
+     .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+})
+
 export default {
   createVideos,
   getAllVideos,
@@ -193,4 +215,5 @@ export default {
   getAllVideoByChannelId,
   getAllVideoByCategoryId,
   getAllVideoByShortsId,
+  getAllLikedVideos
 };

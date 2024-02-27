@@ -18,9 +18,10 @@ subscription_route.delete(
   "/unsubscribe/:userId/:channelId",
   verifyJWT,
   mongoIdPathVariableValidator("userId"),
-  subscriptionController.unsubcribeChannel
+  subscriptionController.unsubcribeSubscription
 );
 
+subscription_route.get('/subscribed-videos', verifyJWT, subscriptionController.getUserSubscribedVideos);
 
 subscription_route.get("/check-subscribe/:userId/:channelId", subscriptionController.checkIsSubcribe);
 export default subscription_route;

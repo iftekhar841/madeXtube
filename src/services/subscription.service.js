@@ -1,114 +1,174 @@
 import { Subscription } from "../models/subscription.model.js";
-import { User } from "../models/user.models.js";
 import { Channel } from "../models/channel.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-
+import { Video } from "../models/videos.models.js";
 
 // Create Subscribe methods
 const createSubscription = async (loggedInUser, paramsData) => {
-    const { userId, channelId } = paramsData;
+  const { userId, channelId } = paramsData;
 
-    const validIds = isValidObjectId([loggedInUser]);
+  const validIds = isValidObjectId([loggedInUser]);
 
-    if(!validIds[loggedInUser]) {
-        throw new ApiError(404, "Invalid ObjectId Format");
-    }
+  if (!validIds[loggedInUser]) {
+    throw new ApiError(404, "Invalid ObjectId Format");
+  }
 
-    const userExistsId = await getUserObjectId(userId);
+  const userExistsId = await getUserObjectId(userId);
 
-    if(userExistsId.toString() !== validIds[loggedInUser].toString()) {
-        throw new ApiError( 400,
-            "Only authorized Owner can subscribed the channel")
-    }
+  if (userExistsId.toString() !== validIds[loggedInUser].toString()) {
+    throw new ApiError(400, "Only authorized Owner can subscribed the channel");
+  }
 
-    const channel = await Channel.findById({ _id : channelId });
-    console.log("channel", channel);
+  const channel = await Channel.findById(channelId);
+  if (!channel) {
+    throw new ApiError(400, "Channel does not exist");
+  }
 
-    if(!channel) {
-        throw new ApiError(400, "Channel does not exist")
-    }
-    
-    // To Check if user already subscribed
-    const checkIsSubcribe = await Subscription.findOne({ subscriber: userExistsId, channel: channel._id });
-    console.log("checkIsSubcribe", checkIsSubcribe);
-    if(checkIsSubcribe) {
-        throw new ApiError( 400, "You have already subscribed to this channel")
-    }
+  // Check if loggedInUser is trying to subscribe to their own channel
+  if (channel.owner.toString() === userExistsId.toString()) {
+    throw new ApiError(400, "Cannot subscribe to your own channel");
+  }
 
-    const dataToCreate = new Subscription({
-        subscriber: userExistsId,
-        channel: channel._id
-    })
+  // To Check if user already subscribed
+  const checkIsSubcribe = await Subscription.findOne({
+    subscriber: userExistsId,
+    channel: channel.owner,
+  });
 
-    const dataToSave = await dataToCreate.save();
-    return dataToSave;
+  if (checkIsSubcribe) {
+    throw new ApiError(400, "You have already subscribed to this channel");
+  }
 
-}
+  const dataToCreate = new Subscription({
+    subscriber: userExistsId,
+    channel: channel.owner, // Store the creator's ObjectId in the channel field
+  });
 
+  const dataToSave = await dataToCreate.save();
+  return dataToSave;
+};
 
-const unsubcribeChannel = async(loggedInUser, paramsData) => {
-    const { userId, channelId } = paramsData;
+const unsubcribeSubscription = async (loggedInUser, paramsData) => {
+  const { userId, channelId } = paramsData;
 
+  const validIds = isValidObjectId([userId, channelId]);
 
-    // if(!subcriberId) {
-    //     throw new ApiError( 400, "All field are required" );
-    // }
+  if (!validIds[userId] || !validIds[channelId]) {
+    throw new ApiError(404, "Invalid ObjectId Format or Missing Fields");
+  }
 
-    const validIds = isValidObjectId([userId, channelId]);
+  const userExistsId = await getUserObjectId(userId);
 
-    if(!validIds[userId] || !validIds[channelId]) {
-        throw new ApiError(404, "Invalid ObjectId Format or Missing Fields");
-    }
+  const fetchChannel = await Channel.findById(validIds[channelId]);
+  console.log("fetchChannel: ", fetchChannel);
 
-    const subscriberExits = await Subscription.findOne({ subscriber: validIds[userId], channel: validIds[channelId] });
+  if (!fetchChannel) {
+    throw new ApiError(400, "Channel does not exist");
+  }
 
-    console.log("subscribeExits--------->", subscriberExits);
+  // Check if loggedInUser is trying to unsubscribe from their own channel
+  if (fetchChannel.owner.toString() === userExistsId.toString()) {
+    throw new ApiError(400, "Cannot unsubscribe to your own channel");
+  }
 
-    if(subscriberExits?.subscriber.toString() !== loggedInUser.toString()) {
-        throw new ApiError( 400,
-            "Only authorized Owner can unsubscribed the channel")
-    }
+  const subscription = await Subscription.findOne({
+    subscriber: validIds[userId],
+    channel: fetchChannel.owner,
+  });
 
-    const dataToUnsubscribed = await Subscription.findByIdAndDelete(subscriberExits._id);
-    console.log("dataToUnsubscribed", dataToUnsubscribed);
-    if(!dataToUnsubscribed) {
-        throw new ApiError(400, "Subscriber does not exist");
-    }
+  console.log("subscribeExits--------->", subscriberExits);
 
-    return dataToUnsubscribed;
-}
+  if (
+    !subscription ||
+    subscription?.subscriber.toString() !== loggedInUser.toString()
+  ) {
+    throw new ApiError(
+      400,
+      "Only authorized Owner can unsubscribed from this channel"
+    );
+  }
 
-const checkIsSubcribe = async(paramsData) => {
+  // Delete the subscription
+  const dataToUnsubscribed = await Subscription.findByIdAndDelete(
+    subscriberExits._id
+  );
+  if (!dataToUnsubscribed) {
+    throw new ApiError(400, "Error unsubscribing from the channel");
+  }
 
-    const { userId, channelId } = paramsData;
+  return dataToUnsubscribed;
+};
 
-    const validIds = isValidObjectId([userId, channelId]);
+const getUserSubscribedVideos = async (loggedInUser) => {
+  // Validate loggedInUserId
+  const validIds = isValidObjectId([loggedInUser]);
+  if (!validIds[loggedInUser]) {
+    throw new ApiError(400, "Invalid loggedInUser Format");
+  }
 
-    if(!validIds[userId] || !validIds[channelId]) {
-        throw new ApiError(400, "Invalid userId or ChannelId format");
-    }
+  // Find the user's subscribed channels
+  const userSubscribedChannels = await Subscription.find({
+    subscriber: loggedInUser,
+  }).distinct("channel");
 
-    const userExistsId = await getUserObjectId(validIds[userId]);
+  if (!userSubscribedChannels.length) {
+    throw new ApiError(404, "User is not subscribed to any channels");
+  }
+  // Find the channelIds of the subscribed channels
+  const subscribedChannels = await Channel.find({
+    owner: { $in: userSubscribedChannels },
+  }).distinct("_id");
 
-    const fetchSubcribed = await Subscription.findOne({ subscriber: userExistsId, channel: validIds[channelId]})
-    console.log("fetchSubcribed", fetchSubcribed);
+  if (!subscribedChannels.length) {
+    throw new ApiError(400, "No Channel Found from subscribed channels");
+  }
 
-    if(!fetchSubcribed) {
-        return {
-            isSubscribed: false,
-            message: "You haven't subcribed Yet!, Sign in then subcribe"
-        }
-    } else {
-        return {
-            isSubscribed: true,
-            message: "You have already subscribed"
-        }
-    }
-}
+  // Find videos uploaded by subscribed channels
+  const subscribedVideos = await Video.find({
+    channel: { $in: subscribedChannels },
+  });
+
+  if (!subscribedVideos.length) {
+    throw new ApiError(400, "No Video Found from subscribed channels");
+  }
+
+  return subscribedVideos;
+};
+
+const checkIsSubcribe = async (paramsData) => {
+  const { userId, channelId } = paramsData;
+
+  const validIds = isValidObjectId([userId, channelId]);
+
+  if (!validIds[userId] || !validIds[channelId]) {
+    throw new ApiError(400, "Invalid userId or ChannelId format");
+  }
+
+  const userExistsId = await getUserObjectId(validIds[userId]);
+
+  const fetchSubcribed = await Subscription.findOne({
+    subscriber: userExistsId,
+    channel: validIds[channelId].owner,
+  });
+  console.log("fetchSubcribed", fetchSubcribed);
+
+  if (!fetchSubcribed) {
+    return {
+      isSubscribed: false,
+      message: "You haven't subcribed Yet!, Sign in then subcribe",
+    };
+  } else {
+    return {
+      isSubscribed: true,
+      message: "You have already subscribed",
+    };
+  }
+};
+
 export default {
-    createSubscription,
-    unsubcribeChannel,
-    checkIsSubcribe
-}
+  createSubscription,
+  unsubcribeSubscription,
+  getUserSubscribedVideos,
+  checkIsSubcribe,
+};

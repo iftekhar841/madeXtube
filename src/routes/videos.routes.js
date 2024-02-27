@@ -47,4 +47,6 @@ video_route.get(
 
 video_route.get("/shorts", videosController.getAllVideoByShortsId);
 
+video_route.get("/liked-videos/users/:userId", verifyJWT, videosController.getAllLikedVideos);
+
 export default video_route;

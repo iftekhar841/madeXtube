@@ -29,10 +29,10 @@ const createSubscription = asyncHandler(async (req, res) => {
   }
 });
 
-const unsubcribeChannel = asyncHandler(async (req, res) => {
+const unsubcribeSubscription = asyncHandler(async (req, res) => {
   try {
     const loggedInUser = req.user._id;
-    const unSubcribedResponse = await subscriptionService.unsubcribeChannel(
+    const unSubcribedResponse = await subscriptionService.unsubcribeSubscription(
       loggedInUser,
       req.params
     );
@@ -49,6 +49,32 @@ const unsubcribeChannel = asyncHandler(async (req, res) => {
       );
   }
 });
+
+
+const getUserSubscribedVideos = asyncHandler(async (req, res) => {
+  try {
+    const loggedInUser =  req.user?._id
+    const userSubscribedVideosResponse = await subscriptionService.getUserSubscribedVideos(
+      loggedInUser
+    );
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+          200,
+          userSubscribedVideosResponse,
+          "User Subscribed Videos fetch successfully"
+        )
+      );
+  } catch (error) {
+    return res
+    .status(500)
+    .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+})
+
 
 const checkIsSubcribe = asyncHandler(async (req, res) => {
   try {
@@ -76,6 +102,7 @@ const checkIsSubcribe = asyncHandler(async (req, res) => {
 
 export default {
   createSubscription,
-  unsubcribeChannel,
+  unsubcribeSubscription,
+  getUserSubscribedVideos,
   checkIsSubcribe
 };
