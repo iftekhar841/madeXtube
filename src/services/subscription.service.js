@@ -110,30 +110,40 @@ const getUserSubscribedVideos = async (loggedInUser) => {
   // Find the user's subscribed channels
   const userSubscribedChannels = await Subscription.find({
     subscriber: loggedInUser,
-  }).distinct("channel");
+  }).distinct('channel');
+
+  console.log("userSubscribedChannels", userSubscribedChannels);
 
   if (!userSubscribedChannels.length) {
     throw new ApiError(404, "User is not subscribed to any channels");
   }
   // Find the channelIds of the subscribed channels
+  // const subscribedChannels = await Channel.find({
+  //   owner: { $in: userSubscribedChannels },
+  // }).populate('owner', 'avatar username -_id');
   const subscribedChannels = await Channel.find({
     owner: { $in: userSubscribedChannels },
-  }).distinct("_id");
+  }).populate('owner', 'avatar username -_id');
+
+  console.log("Subscribed channels", subscribedChannels);
 
   if (!subscribedChannels.length) {
     throw new ApiError(400, "No Channel Found from subscribed channels");
   }
 
-  // Find videos uploaded by subscribed channels
-  const subscribedVideos = await Video.find({
-    channel: { $in: subscribedChannels },
-  });
+return subscribedChannels;
 
-  if (!subscribedVideos.length) {
-    throw new ApiError(400, "No Video Found from subscribed channels");
-  }
+  // // Find videos uploaded by subscribed channels
+  // const subscribedVideos = await Video.find({
+  //   channel: { $in: subscribedChannels },
+  // });
 
-  return subscribedVideos;
+  // // console.log("subscribed videos", subscribedVideos);
+  // if (!subscribedVideos.length) {
+  //   throw new ApiError(400, "No Video Found from subscribed channels");
+  // }
+
+  // return subscribedVideos;
 };
 
 const checkIsSubcribe = async (paramsData) => {
