@@ -28,5 +28,8 @@ user_route.get(
 
 user_route.get("/total-users", userController.getAllUsers);
 
+
+user_route.get("/userProfile/:userId", userController.getUserProfile);
+
 export default user_route;
 

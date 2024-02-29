@@ -1,6 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { getUserObjectId } from "../utils/helperFunctions.js";
 
 //Generate Access and Refresh Tokens
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -141,6 +142,7 @@ const logoutUser = async (userId) => {
 
 const getUserChannelProfile = async (paramsData, requestUserId) => {
   const { username } = paramsData;
+  console.log("user", username);
 
   if (!username?.trim()) {
     throw new ApiError(400, "username is missing");
@@ -169,11 +171,46 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
       },
     },
     {
+      $lookup: {
+        from: "channels",
+        localField: "_id",
+        foreignField: "owner",
+        as: "channelData",
+      }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "channelData._id",
+        foreignField: "channel",
+        as: "videosData",
+      }
+    },
+    // {
+    //   $lookup: {
+    //     from: "playlists",
+    //     localField: "channelData.owner",
+    //     foreignField: "owner",
+    //     as: "playlistsData",
+    //   }
+    // },
+    // {
+    //     $lookup: {
+    //       from: "videos",
+    //       localField: "playlistsData.videos",
+    //       foreignField: "_id",
+    //       as: "playlistsVideos",
+    //     }
+    // },
+    {
+      $unwind: "$channelData",
+    },
+    {
       $addFields: {
         subscribersCount: {
           $size: "$subscribers",
         },
-        channelsSubscribedToCount: {
+        channelIsSubscribedToCount: {
           $size: "$subscribedTo",
         },
         isSubscribed: {
@@ -193,9 +230,28 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
         avatar: 1,
         coverImage: 1,
         email: 1,
+        channelData: {
+          _id: 1,
+          channelName: 1,
+          description: 1,
+        },
+        // videosData: 1,
+        videosData: {
+          _id: 1,
+          videoFile: 1,
+          thumbnail: 1,
+          title: 1,
+          description: 1,
+          duration: 1,
+          views: 1,
+          isPublished: 1,
+          createdAt: 1,
+        },
+        // playlistsData: 1,
+        // playlistsVideos: 1,
         isSubscribed: 1,
         subscribersCount: 1,
-        channelsSubscribedToCount: 1,
+        channelIsSubscribedToCount: 1,
       },
     },
   ]);
@@ -204,7 +260,7 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
     throw new ApiError(404, "Channel does not exists");
   }
 
-  return userAggregate;
+  return userAggregate[0];
 };
 
 const getAllUsers = async () => {
@@ -217,10 +273,23 @@ const getAllUsers = async () => {
   return totalUsers;
 };
 
+const getUserProfile = async (paramsData) => {
+  const { userId } = paramsData;
+
+  if (!userId?.trim()) {
+    throw new ApiError(400, "userId is missing");
+  }
+
+  const user = await getUserObjectId(userId);
+  console.log("user", user);
+
+}
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
   getUserChannelProfile,
   getAllUsers,
+  getUserProfile
 };
