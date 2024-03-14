@@ -229,6 +229,7 @@ const getSingleVideoById = async (paramsData) => {
         "channelData.owner": {
           _id: "$ownerData._id",
           avatar: "$ownerData.avatar",
+          username: "$ownerData.username",
         },
       },
     },

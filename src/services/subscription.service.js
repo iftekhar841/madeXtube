@@ -77,7 +77,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
     channel: fetchChannel.owner,
   });
 
-  console.log("subscribeExits--------->", subscriberExits);
+  // console.log("subscribeExits--------->", subscriberExits);
 
   if (
     !subscription ||
@@ -91,7 +91,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
 
   // Delete the subscription
   const dataToUnsubscribed = await Subscription.findByIdAndDelete(
-    subscriberExits._id
+    subscription._id
   );
   if (!dataToUnsubscribed) {
     throw new ApiError(400, "Error unsubscribing from the channel");
