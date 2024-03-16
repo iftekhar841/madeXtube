@@ -11,6 +11,7 @@ import { Channel } from "../models/channel.model.js";
 import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
 import { Category } from "../models/categories.model.js";
 
+
 //Created videos
 const createVideos = async (
   videoDetails,
@@ -79,6 +80,7 @@ const createVideos = async (
   }
   return dataToFetch;
 };
+
 
 // Get all videos
 const getAllVideos = async (queryParams) => {
@@ -182,6 +184,7 @@ const getAllVideos = async (queryParams) => {
   return videoAggregate[0];
 };
 
+
 // Get single video by using its Id
 const getSingleVideoById = async (paramsData) => {
   const { videoId } = paramsData;
@@ -229,6 +232,7 @@ const getSingleVideoById = async (paramsData) => {
         "channelData.owner": {
           _id: "$ownerData._id",
           avatar: "$ownerData.avatar",
+          username: "$ownerData.username",
         },
       },
     },
@@ -265,6 +269,85 @@ const getSingleVideoById = async (paramsData) => {
   return singleVideo;
 };
 
+
+// Update the single video
+const updateSingleVideoById = async (loggedInUser, bodyData, paramsData) => {
+  const { videoId } = paramsData;
+  const { title, description } = bodyData;
+
+  // Validate videoId format
+  const validIds = isValidObjectId([videoId]);
+  if (!validIds[videoId]) {
+    throw new ApiError(404, "Invalid Video Id Format");
+  }
+
+  // Find the channel owned by the logged-in user
+  const existingChannel = await Channel.findOne({ owner: loggedInUser }).select(
+    "owner"
+  );
+  if (!existingChannel) {
+    throw new ApiError(404, "Channel does not exits for logged in user");
+  }
+
+  // Find the video owned by the logged-in user
+  const video = await Video.findOne({
+    channel: existingChannel._id,
+    _id: videoId,
+  }).select("title description");
+  if (!video) {
+    throw new ApiError(404, "Only authorizes user can update their video");
+  }
+
+  // Update the video with new title and description
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        title,
+        description,
+      },
+    },
+    { new: true, select: "title description" }
+  );
+  if (!updatedVideo) {
+    throw new ApiError(404, "Something went wrong while updating");
+  }
+
+  return updatedVideo;
+};
+
+
+// Delete the single video
+const deleteSingleVideoById = async (loggedInUser, paramsData) => {
+  const { videoId } = paramsData;
+
+  const validIds = isValidObjectId([videoId]);
+  if (!validIds[videoId]) {
+    throw new ApiError(404, "Invalid Video Id Format");
+  }
+
+  // Find the channel owned by the logged-in user
+  const existingChannel = await Channel.findOne({ owner: loggedInUser }).select(
+    "owner"
+  );
+  if (!existingChannel) {
+    throw new ApiError(404, "Channel does not exits for logged in user");
+  }
+  // Find the video owned by the logged-in user
+  const video = await Video.findOne({
+    channel: existingChannel._id,
+    _id: videoId,
+  }).select("title description");
+  if (!video) {
+    throw new ApiError(404, "Only authorizes user can deleted their video");
+  }
+
+  const deletedVideo = await Video.findByIdAndDelete(videoId);
+
+  return deletedVideo;
+};
+
+
 // Update the view of video
 const updateViewVideo = async (paramsData) => {
   const { videoId } = paramsData;
@@ -289,6 +372,7 @@ const updateViewVideo = async (paramsData) => {
 
   return viewToUpdate;
 };
+
 
 // Update the visibility of the video
 const togglePublishVideo = async (paramsData, loggedInUser) => {
@@ -328,6 +412,7 @@ const togglePublishVideo = async (paramsData, loggedInUser) => {
   return togglePublishVideoUpdate;
 };
 
+
 //  Get all the video by using of channelId
 const getAllVideoByChannelId = async (paramsData) => {
   const { channelId } = paramsData;
@@ -356,6 +441,7 @@ const getAllVideoByChannelId = async (paramsData) => {
 
   return videos;
 };
+
 
 //  Get all the video by using of categoryId
 const getAllVideoByCategoryId = async (paramsData) => {
@@ -439,6 +525,7 @@ const getAllVideoByCategoryId = async (paramsData) => {
 
   return categoryVideoAggregate;
 };
+
 
 //  Get all the video by using of shortsId
 const getAllVideoByShortsId = async (queryData) => {
@@ -528,6 +615,7 @@ const getAllVideoByShortsId = async (queryData) => {
   return shortsVideoAggregate[0];
 };
 
+
 //  Get all the Liked Videos by using of userId
 const getAllLikedVideos = async (paramsData, loggedInUser) => {
   const { userId } = paramsData;
@@ -568,10 +656,13 @@ const getAllLikedVideos = async (paramsData, loggedInUser) => {
   return fetchLikedVideos;
 };
 
+
 export default {
   createVideos,
   getAllVideos,
   getSingleVideoById,
+  updateSingleVideoById,
+  deleteSingleVideoById,
   updateViewVideo,
   togglePublishVideo,
   getAllVideoByChannelId,

@@ -41,7 +41,29 @@ const getChannelInfoByUserId = asyncHandler(async (req, res) => {
     }
 })
 
+
+const deleteChannel = asyncHandler(async (req, res) => {
+    try {
+        const loggedInUser = req.user._id;
+        // Handle the delete response
+        const deleteResponse = await channelService.deleteChannel(
+            req.params,
+            loggedInUser
+        );
+        return res
+       .status(201)
+       .json( new ApiResponse(201, deleteResponse));
+   
+    } catch (error) {
+        return res
+       .status(500)
+       .json( new ApiError({ statusCode: error.statusCode, message: error.message }))
+        
+    }
+})
+
 export default {
     createChannel,
-    getChannelInfoByUserId
+    getChannelInfoByUserId,
+    deleteChannel
 }

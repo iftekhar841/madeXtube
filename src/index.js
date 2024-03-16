@@ -15,5 +15,4 @@ connectDB()
   })
   .catch((error) => {
     console.log("MongoBD connection Failed!!! ", error);
-  })
-  ;
+  });  

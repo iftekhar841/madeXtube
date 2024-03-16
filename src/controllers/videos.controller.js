@@ -58,6 +58,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 });
 
+
 const getSingleVideoById = asyncHandler(async (req, res) => {
   try {
     const singleVideoResponse = await videosService.getSingleVideoById(
@@ -80,6 +81,57 @@ const getSingleVideoById = asyncHandler(async (req, res) => {
       );
   }
 });
+
+const updateSingleVideoById = asyncHandler(async (req, res) => {
+  try {
+    const loggedInUser = req.user?._id;
+    const updateVideoResponse = await videosService.updateSingleVideoById(
+      loggedInUser,
+      req.body,
+      req.params
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updateVideoResponse,
+          "Video updated successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+})
+
+const deleteSingleVideoById = asyncHandler(async (req, res) => {
+  try {
+    const loggedInUser = req.user?._id;
+    const deleteVideoResponse = await videosService.deleteSingleVideoById(
+      loggedInUser,
+      req.params
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          deleteVideoResponse,
+          "Video deleted successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+})
 
 const updateViewVideo = asyncHandler(async (req, res) => {
   try {
@@ -204,12 +256,14 @@ const getAllLikedVideos = asyncHandler(async (req, res) =>{
         new ApiError({ statusCode: error.statusCode, message: error.message })
       );
   }
-})
+});
 
 export default {
   createVideos,
   getAllVideos,
   getSingleVideoById,
+  updateSingleVideoById,
+  deleteSingleVideoById,
   updateViewVideo,
   togglePublishVideo,
   getAllVideoByChannelId,

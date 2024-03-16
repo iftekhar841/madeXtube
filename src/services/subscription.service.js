@@ -77,8 +77,6 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
     channel: fetchChannel.owner,
   });
 
-  console.log("subscribeExits--------->", subscriberExits);
-
   if (
     !subscription ||
     subscription?.subscriber.toString() !== loggedInUser.toString()
@@ -91,7 +89,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
 
   // Delete the subscription
   const dataToUnsubscribed = await Subscription.findByIdAndDelete(
-    subscriberExits._id
+    subscription._id
   );
   if (!dataToUnsubscribed) {
     throw new ApiError(400, "Error unsubscribing from the channel");
@@ -102,7 +100,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
 
 const getUserSubscribedVideos = async (loggedInUser) => {
   // Validate loggedInUserId
-  const validIds = isValidObjectId([loggedInUser]);
+  const validIds = isValidObjectId([loggedInUser]); 
   if (!validIds[loggedInUser]) {
     throw new ApiError(400, "Invalid loggedInUser Format");
   }

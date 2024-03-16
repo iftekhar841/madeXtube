@@ -26,6 +26,20 @@ video_route.get(
 );
 
 video_route.patch(
+  "/update-single-video/:videoId",  
+  verifyJWT,
+  mongoIdPathVariableValidator("videoId"), 
+  videosController.updateSingleVideoById
+);
+
+video_route.delete(
+  "/delete-single-video/:videoId",  
+  verifyJWT,
+  mongoIdPathVariableValidator("videoId"), 
+  videosController.deleteSingleVideoById
+);
+
+video_route.patch(
   "/view/:videoId",
   mongoIdPathVariableValidator("videoId"),
   videosController.updateViewVideo
