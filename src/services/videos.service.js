@@ -195,9 +195,10 @@ const getSingleVideoById = async (paramsData) => {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
-  // Fetch no of like count
+  // Fetch no of like count and dislike count
   const videoLike = await VideoLikeAndDislike.find({ videoId: videoId });
   const likesCount = videoLike.reduce((sum, video) => sum + video.likes, 0);
+  const dislikeCount = videoLike.reduce((sum, video) => sum + video.dislikes, 0);
 
   const singleVideoAggregate = await Video.aggregate([
     {
@@ -265,6 +266,9 @@ const getSingleVideoById = async (paramsData) => {
 
   // Attach likesCount to singleVideo
   singleVideo.likesCount = likesCount;
+
+  // Attach dislikesCount to singleVideo
+  singleVideo.dislikesCount = dislikeCount;
 
   return singleVideo;
 };
@@ -343,6 +347,7 @@ const deleteSingleVideoById = async (loggedInUser, paramsData) => {
   }
 
   const deletedVideo = await Video.findByIdAndDelete(videoId);
+  console.log("Deleted video", deletedVideo);
 
   return deletedVideo;
 };

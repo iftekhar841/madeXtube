@@ -26,16 +26,16 @@ video_route.get(
 );
 
 video_route.patch(
-  "/update-single-video/:videoId",  
+  "/update-single-video/:videoId",
   verifyJWT,
-  mongoIdPathVariableValidator("videoId"), 
+  mongoIdPathVariableValidator("videoId"),
   videosController.updateSingleVideoById
 );
 
 video_route.delete(
-  "/delete-single-video/:videoId",  
+  "/delete-single-video/:videoId",
   verifyJWT,
-  mongoIdPathVariableValidator("videoId"), 
+  mongoIdPathVariableValidator("videoId"),
   videosController.deleteSingleVideoById
 );
 
@@ -45,7 +45,11 @@ video_route.patch(
   videosController.updateViewVideo
 );
 
-video_route.put("/toggle/publish/:videoId/users/:userId", verifyJWT, videosController.togglePublishVideo);
+video_route.put(
+  "/toggle/publish/:videoId/users/:userId",
+  verifyJWT,
+  videosController.togglePublishVideo
+);
 
 video_route.get(
   "/getByChannelId/:channelId",
@@ -61,6 +65,10 @@ video_route.get(
 
 video_route.get("/shorts", videosController.getAllVideoByShortsId);
 
-video_route.get("/liked-videos/users/:userId", verifyJWT, videosController.getAllLikedVideos);
+video_route.get(
+  "/liked-videos/users/:userId",
+  verifyJWT,
+  videosController.getAllLikedVideos
+);
 
 export default video_route;
