@@ -10,7 +10,7 @@ import {
 import { Channel } from "../models/channel.model.js";
 import { VideoLikeAndDislike } from "../models/videoLikeAndDislike.model.js";
 import { Category } from "../models/categories.model.js";
-
+import { Comment } from "../models/comment.model.js";
 
 //Created videos
 const createVideos = async (
@@ -80,7 +80,6 @@ const createVideos = async (
   }
   return dataToFetch;
 };
-
 
 // Get all videos
 const getAllVideos = async (queryParams) => {
@@ -184,7 +183,6 @@ const getAllVideos = async (queryParams) => {
   return videoAggregate[0];
 };
 
-
 // Get single video by using its Id
 const getSingleVideoById = async (paramsData) => {
   const { videoId } = paramsData;
@@ -198,7 +196,10 @@ const getSingleVideoById = async (paramsData) => {
   // Fetch no of like count and dislike count
   const videoLike = await VideoLikeAndDislike.find({ videoId: videoId });
   const likesCount = videoLike.reduce((sum, video) => sum + video.likes, 0);
-  const dislikeCount = videoLike.reduce((sum, video) => sum + video.dislikes, 0);
+  const dislikeCount = videoLike.reduce(
+    (sum, video) => sum + video.dislikes,
+    0
+  );
 
   const singleVideoAggregate = await Video.aggregate([
     {
@@ -273,7 +274,6 @@ const getSingleVideoById = async (paramsData) => {
   return singleVideo;
 };
 
-
 // Update the single video
 const updateSingleVideoById = async (loggedInUser, bodyData, paramsData) => {
   const { videoId } = paramsData;
@@ -320,7 +320,6 @@ const updateSingleVideoById = async (loggedInUser, bodyData, paramsData) => {
   return updatedVideo;
 };
 
-
 // Delete the single video
 const deleteSingleVideoById = async (loggedInUser, paramsData) => {
   const { videoId } = paramsData;
@@ -352,7 +351,6 @@ const deleteSingleVideoById = async (loggedInUser, paramsData) => {
   return deletedVideo;
 };
 
-
 // Update the view of video
 const updateViewVideo = async (paramsData) => {
   const { videoId } = paramsData;
@@ -377,7 +375,6 @@ const updateViewVideo = async (paramsData) => {
 
   return viewToUpdate;
 };
-
 
 // Update the visibility of the video
 const togglePublishVideo = async (paramsData, loggedInUser) => {
@@ -417,36 +414,75 @@ const togglePublishVideo = async (paramsData, loggedInUser) => {
   return togglePublishVideoUpdate;
 };
 
-
 //  Get all the video by using of channelId
 const getAllVideoByChannelId = async (paramsData) => {
   const { channelId } = paramsData;
   console.log("channelId", channelId);
 
   //Validate and create ObjectId instances for channelId
-  const validIds = isValidObjectId([channelId]);
+  const isValidChannelId = isValidObjectId([channelId]);
 
-  if (!validIds[channelId]) {
+  if (!isValidChannelId[channelId]) {
     throw new ApiError(400, "Invalid ObjectId Format");
   }
 
-  // Check existing channel
-  const existingChannel = await Channel.findById(validIds[channelId]);
+  // Check if the channel exists
+  const existingChannel = await Channel.findById(
+    isValidChannelId[channelId]
+  ).select("_id");
 
   if (!existingChannel) {
     throw new ApiError(404, "Channel does not exist");
   }
 
-  // Find all the videos on the basis of the channel
-  const videos = await Video.find({ channel: validIds[channelId] });
+  // Find all videos belonging to the channel
+  const videos = await Video.find({
+    channel: isValidChannelId[channelId],
+  }).select("-channel -videoCategory");
 
   if (videos && videos.length === 0) {
     throw new ApiError(404, "No Video Found");
   }
 
-  return videos;
-};
+  // Fetch like and dislike counts and comment counts for each video in parallel
+  const videosWithCounts = await Promise.all(
+    videos.map(async (video) => {
+      // Fetch like and dislike counts for the video
+      const videoLikeAndDislikeIds = await VideoLikeAndDislike.find({
+        videoId: video._id,
+      }).select("-_id videoId likes dislikes");
 
+      // Fetch comments for the video
+      const commentIds = await Comment.find({ video: video._id }).select(
+        "-_id video owner"
+      );
+
+      // Count the number of unique owners
+      const uniqueOwners = new Set(commentIds.map((comment) => comment.owner));
+      const commentCount = uniqueOwners.size;
+
+      // Calculate total likes and dislikes for the video
+      const likesCount = videoLikeAndDislikeIds.reduce(
+        (sum, video) => sum + video.likes,
+        0
+      );
+      const dislikesCount = videoLikeAndDislikeIds.reduce(
+        (sum, video) => sum + video.dislikes,
+        0
+      );
+
+      // Create a new object with video details and counts
+      return {
+        ...video.toObject(), // Convert the video document to a plain JavaScript object
+        likesCount,
+        dislikesCount,
+        commentCount,
+      };
+    })
+  );
+
+  return videosWithCounts;
+};
 
 //  Get all the video by using of categoryId
 const getAllVideoByCategoryId = async (paramsData) => {
@@ -530,7 +566,6 @@ const getAllVideoByCategoryId = async (paramsData) => {
 
   return categoryVideoAggregate;
 };
-
 
 //  Get all the video by using of shortsId
 const getAllVideoByShortsId = async (queryData) => {
@@ -620,7 +655,6 @@ const getAllVideoByShortsId = async (queryData) => {
   return shortsVideoAggregate[0];
 };
 
-
 //  Get all the Liked Videos by using of userId
 const getAllLikedVideos = async (paramsData, loggedInUser) => {
   const { userId } = paramsData;
@@ -660,7 +694,6 @@ const getAllLikedVideos = async (paramsData, loggedInUser) => {
 
   return fetchLikedVideos;
 };
-
 
 export default {
   createVideos,

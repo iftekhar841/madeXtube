@@ -26,10 +26,14 @@ user_route.get(
   userController.getUserChannelProfile
 );
 
-user_route.get("/total-users", userController.getAllUsers);
+user_route.patch(
+  "/customize-user",
+  verifyJWT,
+  userController.customizeUserInfo
+);
 
+user_route.get("/total-users", userController.getAllUsers);
 
 user_route.get("/userProfile/:userId", userController.getUserProfile);
 
 export default user_route;
-

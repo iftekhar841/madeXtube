@@ -94,6 +94,30 @@ const logoutUser = asyncHandler(async (req, res) => {
   }
 });
 
+const customizeUserInfo = asyncHandler(async (req, res) => {
+  try {
+    const response = await userService.customizeUserInfo(
+      req.body,
+      req.user?._id
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          "User customized info updated successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiError({ statusCode: error.statusCode, message: error.message })
+      );
+  }
+});
+
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   try {
     console.log("requesting ", req.user._id);
@@ -124,13 +148,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
     const response = await userService.getAllUsers();
     return res
       .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          response,
-          "All users fetched successfully"
-        )
-      );
+      .json(new ApiResponse(200, response, "All users fetched successfully"));
   } catch (error) {
     return res
       .status(500)
@@ -144,8 +162,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
   try {
     const userProfileResponse = await userService.getUserProfile(req.params);
     return res
-    .status(200)
-    .json(
+      .status(200)
+      .json(
         new ApiResponse(
           200,
           userProfileResponse,
@@ -154,17 +172,19 @@ const getUserProfile = asyncHandler(async (req, res) => {
       );
   } catch (error) {
     return res
-    .status(500)
-    .json(
+      .status(500)
+      .json(
         new ApiError({ statusCode: error.statusCode, message: error.message })
       );
   }
 });
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
+  customizeUserInfo,
   getUserChannelProfile,
   getAllUsers,
-  getUserProfile
+  getUserProfile,
 };

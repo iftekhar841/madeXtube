@@ -1,7 +1,9 @@
 import { ApiError } from "../utils/ApiError.js";
+import { isValidObjectId } from "mongoose";
 import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { getUserObjectId } from "../utils/helperFunctions.js";
+import { Channel } from "../models/channel.model.js";
 
 //Generate Access and Refresh Tokens
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -140,6 +142,62 @@ const logoutUser = async (userId) => {
   return { message: "User logout was successful" };
 };
 
+// Update the user profile
+const customizeUserInfo = async (userDetails, requestUserId) => {
+  // Validate input data
+  if (!userDetails || typeof userDetails !== "object") {
+    throw new ApiError(400, "Invalid user details");
+  }
+
+  const { username, channelName, description } = userDetails;
+
+  // Validate requestUserId
+  if (!isValidObjectId(requestUserId)) {
+    throw new ApiError(400, "Invalid user ID");
+  }
+
+  // Find the user by ID
+  const user = await User.findById(requestUserId).select("username");
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Create an object to store the updated fields
+  const updatedFields = {};
+
+  // Update user's username if provided
+  if (username !== undefined && username.trim() !== "") {
+    user.username = username.toLowerCase();
+    updatedFields.username = user.username;
+    await user.save();
+  }
+
+  // Find the channel by owner ID
+  const channel = await Channel.findOne({ owner: user._id }).select(
+    "owner channelName description"
+  );
+  if (!channel) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  // Update channel's name and description if provided
+  if (channelName || description) {
+    if (channelName) {
+      channel.channelName = channelName;
+      updatedFields.channelName = channel.channelName;
+    }
+    if (description) {
+      channel.description = description;
+      updatedFields.description = channel.description;
+    }
+    await channel.save();
+  }
+
+  // Return the object containing only the updated fields
+  return updatedFields;
+};
+
+// get user profile
 const getUserChannelProfile = async (paramsData, requestUserId) => {
   const { username } = paramsData;
   console.log("user", username);
@@ -176,7 +234,7 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
         localField: "_id",
         foreignField: "owner",
         as: "channelData",
-      }
+      },
     },
     {
       $lookup: {
@@ -184,7 +242,7 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
         localField: "channelData._id",
         foreignField: "channel",
         as: "videosData",
-      }
+      },
     },
     // {
     //   $lookup: {
@@ -263,6 +321,7 @@ const getUserChannelProfile = async (paramsData, requestUserId) => {
   return userAggregate[0];
 };
 
+// get all the users
 const getAllUsers = async () => {
   const totalUsers = await User.countDocuments();
 
@@ -273,6 +332,7 @@ const getAllUsers = async () => {
   return totalUsers;
 };
 
+// get user profile
 const getUserProfile = async (paramsData) => {
   const { userId } = paramsData;
 
@@ -282,14 +342,14 @@ const getUserProfile = async (paramsData) => {
 
   const user = await getUserObjectId(userId);
   console.log("user", user);
-
-}
+};
 
 export default {
   registerUser,
   loginUser,
   logoutUser,
+  customizeUserInfo,
   getUserChannelProfile,
   getAllUsers,
-  getUserProfile
+  getUserProfile,
 };
