@@ -21,6 +21,7 @@ subscription_route.delete(
   subscriptionController.unsubcribeSubscription
 );
 
+subscription_route.get('/subscriber-count/:channelId', subscriptionController.getSubscriberCount);
 subscription_route.get('/subscribed-videos', verifyJWT, subscriptionController.getUserSubscribedVideos);
 
 subscription_route.get("/check-subscribe/:userId/:channelId", subscriptionController.checkIsSubcribe);

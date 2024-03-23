@@ -2,7 +2,7 @@ import { Subscription } from "../models/subscription.model.js";
 import { Channel } from "../models/channel.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
-import { Video } from "../models/videos.models.js";
+
 
 // Create Subscribe methods
 const createSubscription = async (loggedInUser, paramsData) => {
@@ -48,6 +48,7 @@ const createSubscription = async (loggedInUser, paramsData) => {
   const dataToSave = await dataToCreate.save();
   return dataToSave;
 };
+
 
 const unsubcribeSubscription = async (loggedInUser, paramsData) => {
   const { userId, channelId } = paramsData;
@@ -98,6 +99,37 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
   return dataToUnsubscribed;
 };
 
+                                                                                                                                                                                                                                                                                          
+const getSubscriberCount = async (paramsData) => {
+    const { channelId } = paramsData;
+
+    // Input validation
+    const isValidChannelId = isValidObjectId([channelId]);
+
+    if (!isValidChannelId[channelId]) {
+      throw new ApiError(400, "Invalid channelId Format");
+    }
+
+    // Fetch the channel
+    const existingChannel = await Channel.findById(
+      isValidChannelId[channelId]
+    ).select('owner');
+    
+    if (!existingChannel) {
+      throw new ApiError(400, "Channel does not exist");
+    }
+
+    // Find the user's subscribed channels
+    const channelSubscriberCount = await Subscription.countDocuments({
+      channel: existingChannel.owner,
+    });
+
+    return {
+      subscriberCount: channelSubscriberCount,
+    };
+};
+
+
 const getUserSubscribedVideos = async (loggedInUser) => {
   // Validate loggedInUserId
   const validIds = isValidObjectId([loggedInUser]); 
@@ -144,6 +176,7 @@ return subscribedChannels;
   // return subscribedVideos;
 };
 
+
 const checkIsSubcribe = async (paramsData) => {
   const { userId, channelId } = paramsData;
 
@@ -174,9 +207,11 @@ const checkIsSubcribe = async (paramsData) => {
   }
 };
 
+
 export default {
   createSubscription,
   unsubcribeSubscription,
+  getSubscriberCount,
   getUserSubscribedVideos,
   checkIsSubcribe,
 };
