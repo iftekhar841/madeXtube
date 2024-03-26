@@ -438,7 +438,7 @@ const getAllVideoByChannelId = async (paramsData) => {
   // Find all videos belonging to the channel
   const videos = await Video.find({
     channel: isValidChannelId[channelId],
-  }).select("-channel -videoCategory");
+  }).select("-channel");
 
   if (videos && videos.length === 0) {
     throw new ApiError(404, "No Video Found");
