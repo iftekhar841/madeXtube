@@ -7,10 +7,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // Category Controllers
 const createCategory = asyncHandler(async (req, res) => {
     try {
-
+        const categoryImagePath = req.file?.path;
+        console.log("Creating category", categoryImagePath);
         // Handle the category response
         const categoryResponse = await categoriesService.createCategory(
-            req.body
+            req.body,
+            categoryImagePath
         );
         return res
             .status(201)    

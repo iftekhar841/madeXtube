@@ -9,6 +9,10 @@ const CategoriesSchema = new Schema({
     description: {
         type: String,
         required: true
+    },
+    categoryImage: {
+        type: String, //cloudinary url
+        required: true
     }
 });
 

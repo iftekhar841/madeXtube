@@ -1,11 +1,11 @@
 import { Category } from "../models/categories.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { getMongoosePaginationOptions } from "../utils/helperFunctions.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 
 
 // Create a new category
-const createCategory = async (categoryDetails) => {
+const createCategory = async (categoryDetails, categoryImagePath) => {
     const { categoryName, description } = categoryDetails;
 
     //   if(!categoryName || !description) {
@@ -27,9 +27,21 @@ const createCategory = async (categoryDetails) => {
         throw new ApiError(400, `Category ${categoryName} already exists`);
     }
 
+    if (!categoryImagePath) {
+        throw new ApiError(400, "Category Image is required");
+      }
+
+    // Uploading the image on cloudinary server  
+    const cloudinaryImageLink = await uploadOnCloudinary(categoryImagePath)
+    console.log("Uploading image on cloudinary server", cloudinaryImageLink);
+    if (!cloudinaryImageLink) {
+        throw new ApiError(400, "Category Image is required");
+    }
+
     const dataToSave = await Category.create({
         categoryName,
-        description
+        description,
+        categoryImage: cloudinaryImageLink.url
     });
 
     return dataToSave;
