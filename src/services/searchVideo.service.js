@@ -1,13 +1,20 @@
 import { Video } from "../models/videos.models.js";
+import { ApiError } from "../utils/ApiError.js";
+
 
 const searchVideo = async (bodyData) => {
   const { searchTerm } = bodyData;
+  if (typeof searchTerm !== 'string') {
+    throw new ApiError("Search term must be a string.");
+  }
+
+  const searchQuery = {
+    title: { $regex: searchTerm, $options: "i" }
+  };
 
   const searchVideoAggregate = await Video.aggregate([
     {
-      $match: {
-        title: { $regex: searchTerm, $options: "i" },
-      },
+        $match: searchQuery,
     },
     {
       $lookup: {

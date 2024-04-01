@@ -4,7 +4,7 @@ const searchVideo_route = Router();
 
 import searchVideoController from "../controllers/searchVideo.controller.js";
 
-searchVideo_route.get(
+searchVideo_route.post(
   "/video/search-video",
   searchVideoController.searchVideo
 );
