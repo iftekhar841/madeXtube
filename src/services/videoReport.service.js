@@ -50,7 +50,7 @@ const CreateReportOnVideo = async (loggedInUser, bodyData) => {
 
   // Create video report
   const dataToCreate = await VideoReport.create({
-    ownerId: user,
+    ownerId: userObjectId,
     videoId: video._id,
     reportId: report._id,
     reportContent,
