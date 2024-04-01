@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import { Channel } from "../models/channel.model.js";
 import { Report } from "../models/report.model.js";
 import { VideoReport } from "../models/videoReport.model.js";
 import { Video } from "../models/videos.models.js";
@@ -7,60 +7,70 @@ import { getUserObjectId, isValidObjectId } from "../utils/helperFunctions.js";
 
 // Create Video Reprt
 
-const CreateVideoReport = async (videoReportDetails) => {
-  const { userId, videoId, reportId } = videoReportDetails;
+const CreateReportOnVideo = async (loggedInUser, bodyData) => {
+  const { videoId, reportId, reportContent } = bodyData;
 
-  if (!userId || !videoId || !reportId) {
+  if (!videoId || !reportId) {
     throw new ApiError(400, "All fields are required");
   }
 
- //Validate and create ObjectId instances for userId, videoId, and reportId
-  const validIds = isValidObjectId([userId, videoId, reportId]);
+  //Validate and create ObjectId instances for videoId, and reportId
+  const validIds = isValidObjectId([videoId, reportId]);
 
-  // Check if any of the ObjectId instances is invalid   
-  if(!validIds[userId] || !validIds[videoId] || !validIds[reportId]) {
-    throw new ApiError(400, "Invalid ObjectId Format");
+  // Check if any of the ObjectId instances is invalid
+  if (!validIds[videoId] || !validIds[reportId]) {
+    throw new ApiError(400, "Invalid VideoId or ReportId Format");
   }
 
-  const ownerId = await getUserObjectId(validIds[userId]); // Fetch the user object id
+  // Fetch the user object id
+  const userObjectId = await getUserObjectId(loggedInUser);
 
-  const video = await Video.findById({ _id: validIds[videoId] }).select(
-    "_id"
-  );
-
+  // Fetch video details
+  const video = await Video.findById(videoId).select("_id channel");
   if (!video) {
     throw new ApiError(404, "Video does not exist");
   }
 
-  const report = await Report.findById({
-    _id: validIds[reportId],
-  }).select("_id reportName");
+  // Fetch channel details
+  const channel = await Channel.findById(video.channel).select("_id owner");
+  if (!channel) {
+    throw new ApiError(404, "Channel does not exist");
+  }
 
+  // Check if the user is the owner of the channel
+  if (channel.owner.toString() === userObjectId.toString()) {
+    throw new ApiError(400, "You cannot report your own videos");
+  }
+
+  // Fetch report details
+  const report = await Report.findById(reportId).select("_id reportName");
   if (!report) {
     throw new ApiError(404, "Report does not exist");
   }
 
+  // Create video report
   const dataToCreate = await VideoReport.create({
-    ownerId: ownerId,
+    ownerId: user,
     videoId: video._id,
     reportId: report._id,
-    reportContent: report.reportName,
+    reportContent,
   });
 
-  const dataToFetch = await VideoReport.findById(dataToCreate._id).select(
+  // Fetch created report details
+  const fethedReport = await VideoReport.findById(dataToCreate._id).select(
     "_id reportContent"
   );
 
-  if (!dataToFetch) {
+  if (!fethedReport) {
     throw new ApiError(
       500,
       "Something went wrong while fetching the video report"
     );
   }
 
-  return dataToFetch;
-};         
+  return fethedReport;
+};
 
 export default {
-  CreateVideoReport,
+  CreateReportOnVideo,
 };

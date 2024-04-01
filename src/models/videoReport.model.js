@@ -15,7 +15,7 @@ const videoReportSchema = new Schema({
     },
     reportContent: {
         type: String,
-        required: true
+        default: ""
     }
 },
     { timestamps: true },

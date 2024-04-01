@@ -5,14 +5,17 @@ import videoReportService from "../services/videoReport.service.js";
 
 
 // Create Video Report Controller
-const CreateVideoReport = asyncHandler(async (req, res) => {
+const CreateReportOnVideo = asyncHandler(async (req, res) => {
     try {
-        const createVideoReportResponse = await videoReportService.CreateVideoReport(
+        // Handle the report on the video reponse 
+        const loggedInUser = req.user._id;
+        const videoReportResponse = await videoReportService.CreateReportOnVideo(
+            loggedInUser,
             req.body
         );
         return res
         .status(201)
-        .json( new ApiResponse(201, createVideoReportResponse, "Video report created successfully"))
+        .json( new ApiResponse(201, videoReportResponse, "Video report created successfully"))
         
     } catch (error) {
         return res
@@ -25,5 +28,5 @@ const CreateVideoReport = asyncHandler(async (req, res) => {
 })
 
 export default {
-    CreateVideoReport,
+    CreateReportOnVideo,
 }
