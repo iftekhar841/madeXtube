@@ -10,8 +10,8 @@ import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
 // Import your push notification 
 import webpush from "web-push";
 
-const publicVapidKey = 'BE3PB0SdEJKGtz_PsZWJgkgrSjZGgvlEpQfLDcfNP--Yetf3YBE6jvb2iJk6SjP47_lWu5Km6Tfg1GrGrLpOrCE';
-const privateVapidKey = '5GUDzlT37iMh_z7ni048tc3z2PhDOpkcxpaj-v0yeic';
+const publicVapidKey = 'BH7rBAHNoTyPVsE1BdcIow7LUt0TBLIE9GyVSfTQP-b5dTeheZma_Fi2eWWjYopkn6HoGbdEsRgaayctf8RviO4';
+const privateVapidKey = 'WWvJjmtbkiNTPOEnF0ZA3HnvOJKsmAfe_uHuYa8ieJM';
 webpush.setVapidDetails('mailto:sameerhacker34@gmail.com', publicVapidKey, privateVapidKey)
 
 
@@ -28,6 +28,7 @@ const sendPushNotification = async (subscription, payload) => {
     console.log('Push notification sent successfully:', result);
   } catch (error) {
     // Handle any errors that occur during notification sending
+    console.log("error:", error);
     console.error('Error sending push notification:', error.message);
   }
 };
@@ -37,7 +38,7 @@ const createSubscription = async (loggedInUser, bodyData) => {
   const { userId, channelId, pushSubscription } = bodyData;
   console.log("loged", loggedInUser);
   console.log("userId", userId);
-console.log("pushSubscription", pushSubscription);
+  console.log("pushSubscription", pushSubscription);
   const validIds = isValidObjectId([loggedInUser]);
 
   if (!validIds[loggedInUser]) {
@@ -84,8 +85,8 @@ console.log("pushSubscription", pushSubscription);
 
    console.log("Saving subscription to channel owner", channelOwner);
 
-// Check if the pushSubscription property is assigned to channelOwner
-console.log("Saved push subscription:", channelOwner.pushSubscription);
+  // Check if the pushSubscription property is assigned to channelOwner
+  console.log("Saved push subscription:", channelOwner.pushSubscription);
 
 
   const newSubscription = new Subscription({
@@ -93,7 +94,7 @@ console.log("Saved push subscription:", channelOwner.pushSubscription);
     channel: channel.owner, // Store the creator's ObjectId in the channel field
   });
   
-   await newSubscription.save(); 
+  //  await newSubscription.save(); 
 
   // // Send push notification to the channel owner when user is subscribed to the channel
 
@@ -101,9 +102,15 @@ console.log("Saved push subscription:", channelOwner.pushSubscription);
     console.error('Channel owner does not have a valid push subscription.');
     return newSubscription;
   }
+
+ const payload= {
+    title: 'MadexTube',
+    message: `${userExists.username} has subscribed to your channel.`,
+    icon: 'https://cdn2.vectorstock.com/i/thumb-large/94/66/emoji-smile-icon-symbol-smiley-face-vector-26119466.jpg',
+  }
    // Send push notification to the channel owner using other means
-   const notificationMessage = `${userExists.username} has subscribed to your channel.`;
-   sendPushNotification(channelOwner.pushSubscription, notificationMessage); // Call your push notification service with an alternative identifier (e.g., email)
+  //  const notificationMessage = `${userExists.username} has subscribed to your channel.`;
+   sendPushNotification(channelOwner.pushSubscription,payload); // Call your push notification service with an alternative identifier (e.g., email)
   
    return newSubscription;
 };
