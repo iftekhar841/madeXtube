@@ -9,7 +9,8 @@ const createSubscription = asyncHandler(async (req, res) => {
     const loggedInUser = req.user._id;
     const subcriptionResponse = await subscriptionService.createSubscription(
       loggedInUser,
-      req.params
+      req.body
+      // req.params
     );
     return res
       .status(200)
@@ -132,4 +133,4 @@ export default {
   getSubscriberCount,
   getUserSubscribedVideos,
   checkIsSubcribe
-};
+};  

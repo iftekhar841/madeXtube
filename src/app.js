@@ -2,8 +2,6 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
-// import webpush from "web-push";
-// import path from "path";
 
 const app = express();
 
@@ -22,9 +20,15 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// const publicVapidKey = 'BE3PB0SdEJKGtz_PsZWJgkgrSjZGgvlEpQfLDcfNP--Yetf3YBE6jvb2iJk6SjP47_lWu5Km6Tfg1GrGrLpOrCE';
-// const privateVapidKey = '5GUDzlT37iMh_z7ni048tc3z2PhDOpkcxpaj-v0yeic';
-// webpush.setVapidDetails('mailto:sameerhacker34@gmail.com', publicVapidKey, privateVapidKey)
+
+// Create route for allow client to subscribe to push notification.
+app.post('/subscribe', (req, res) => {
+  const subscription = req.body;
+  res.status(201).json({});
+  const payload = JSON.stringify({ title: "Hello World", body: "This is your first push notification" });
+
+  webpush.sendNotification(subscription, payload).catch(console.log);
+})
 
 //routes imports
 import user_route from "./routes/user.routes.js";

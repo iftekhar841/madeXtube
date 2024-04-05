@@ -1,38 +1,73 @@
 import { Subscription } from "../models/subscription.model.js";
 import { Channel } from "../models/channel.model.js";
+import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
 
 
-// Create Subscribe methods
-const createSubscription = async (loggedInUser, paramsData) => {
-  const { userId, channelId } = paramsData;
+/************** Send Notification Methods ******************/
 
+// Import your push notification 
+import webpush from "web-push";
+
+const publicVapidKey = 'BE3PB0SdEJKGtz_PsZWJgkgrSjZGgvlEpQfLDcfNP--Yetf3YBE6jvb2iJk6SjP47_lWu5Km6Tfg1GrGrLpOrCE';
+const privateVapidKey = '5GUDzlT37iMh_z7ni048tc3z2PhDOpkcxpaj-v0yeic';
+webpush.setVapidDetails('mailto:sameerhacker34@gmail.com', publicVapidKey, privateVapidKey)
+
+
+
+// Define your sendPushNotification method
+const sendPushNotification = async (subscription, payload) => {
+  try {
+    console.log("subscription", subscription);
+
+    // Send the push notification
+    const result = await webpush.sendNotification(subscription, JSON.stringify(payload));
+    console.log("result", result);
+    // Handle the result if necessary
+    console.log('Push notification sent successfully:', result);
+  } catch (error) {
+    // Handle any errors that occur during notification sending
+    console.error('Error sending push notification:', error.message);
+  }
+};
+
+// Create Subscribe methods
+const createSubscription = async (loggedInUser, bodyData) => {
+  const { userId, channelId, pushSubscription } = bodyData;
+  console.log("loged", loggedInUser);
+  console.log("userId", userId);
+console.log("pushSubscription", pushSubscription);
   const validIds = isValidObjectId([loggedInUser]);
 
   if (!validIds[loggedInUser]) {
     throw new ApiError(404, "Invalid ObjectId Format");
   }
 
-  const userExistsId = await getUserObjectId(userId);
+  const userExists = await User.findById(userId);
+  // console.log("userExists", userExists);
+  if (!userExists) {
+    throw new ApiError(404, "User not found");
+  }
 
-  if (userExistsId.toString() !== validIds[loggedInUser].toString()) {
+  if (userExists._id.toString() !== validIds[loggedInUser].toString()) {
     throw new ApiError(400, "Only authorized Owner can subscribed the channel");
   }
 
   const channel = await Channel.findById(channelId);
+  console.log("channel", channel);
   if (!channel) {
     throw new ApiError(400, "Channel does not exist");
   }
 
   // Check if loggedInUser is trying to subscribe to their own channel
-  if (channel.owner.toString() === userExistsId.toString()) {
+  if (channel.owner.toString() === userExists.toString()) {
     throw new ApiError(400, "Cannot subscribe to your own channel");
   }
 
   // To Check if user already subscribed
   const checkIsSubcribe = await Subscription.findOne({
-    subscriber: userExistsId,
+    subscriber: userExists,
     channel: channel.owner,
   });
 
@@ -40,13 +75,37 @@ const createSubscription = async (loggedInUser, paramsData) => {
     throw new ApiError(400, "You have already subscribed to this channel");
   }
 
-  const dataToCreate = new Subscription({
-    subscriber: userExistsId,
+  // Save the push subscription to the user document
+  const channelOwner = await User.findOne({_id: channel.owner });
+  console.log("channelOwner", channelOwner);
+
+  channelOwner.pushSubscription = pushSubscription;
+   await channelOwner.save();
+
+   console.log("Saving subscription to channel owner", channelOwner);
+
+// Check if the pushSubscription property is assigned to channelOwner
+console.log("Saved push subscription:", channelOwner.pushSubscription);
+
+
+  const newSubscription = new Subscription({
+    subscriber: userExists,
     channel: channel.owner, // Store the creator's ObjectId in the channel field
   });
+  
+   await newSubscription.save(); 
 
-  const dataToSave = await dataToCreate.save();
-  return dataToSave;
+  // // Send push notification to the channel owner when user is subscribed to the channel
+
+  if (!channelOwner || !channelOwner.pushSubscription || !channelOwner.pushSubscription.endpoint) {
+    console.error('Channel owner does not have a valid push subscription.');
+    return newSubscription;
+  }
+   // Send push notification to the channel owner using other means
+   const notificationMessage = `${userExists.username} has subscribed to your channel.`;
+   sendPushNotification(channelOwner.pushSubscription, notificationMessage); // Call your push notification service with an alternative identifier (e.g., email)
+  
+   return newSubscription;
 };
 
 
@@ -59,7 +118,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
     throw new ApiError(404, "Invalid ObjectId Format or Missing Fields");
   }
 
-  const userExistsId = await getUserObjectId(userId);
+  const userExists = await getUserObjectId(userId);
 
   const fetchChannel = await Channel.findById(validIds[channelId]);
   console.log("fetchChannel: ", fetchChannel);
@@ -69,7 +128,7 @@ const unsubcribeSubscription = async (loggedInUser, paramsData) => {
   }
 
   // Check if loggedInUser is trying to unsubscribe from their own channel
-  if (fetchChannel.owner.toString() === userExistsId.toString()) {
+  if (fetchChannel.owner.toString() === userExists.toString()) {
     throw new ApiError(400, "Cannot unsubscribe to your own channel");
   }
 
@@ -186,10 +245,10 @@ const checkIsSubcribe = async (paramsData) => {
     throw new ApiError(400, "Invalid userId or ChannelId format");
   }
 
-  const userExistsId = await getUserObjectId(validIds[userId]);
+  const userExists = await getUserObjectId(validIds[userId]);
 
   const fetchSubcribed = await Subscription.findOne({
-    subscriber: userExistsId,
+    subscriber: userExists,
     channel: validIds[channelId].owner,
   });
   console.log("fetchSubcribed", fetchSubcribed);
