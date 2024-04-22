@@ -2,7 +2,10 @@ import { User } from "../models/user.models.js";
 import { Category } from "../models/categories.model.js";
 import { ApiError } from "./ApiError.js";
 import mongoose from "mongoose";
-
+import Bull from "bull";
+// import queueService from "../processors/bullQueueServices.js";
+import notificationSubscriptionQueueProcessor from "../processors/notificationSubscriptionQueueProcessor.js";
+// import processRequest from "../processors/notificationSubscriptionQueueProcessor.js";
 /**
  *
  * @param {{page: number; limit: number; customLabels: mongoose.CustomLabels;}} options
@@ -110,3 +113,42 @@ export const isValidObjectId = (ids) => {
   });
   return validIds;
 }
+
+
+
+
+export const createBullQueue = (queueName) => {
+    const bullQueue = new Bull(queueName, {
+      redis: {
+        host: '127.0.0.1',
+        port: 6379
+      },
+  });
+  console.log("CreatingbullQueue", bullQueue);
+  return bullQueue;
+};
+
+
+
+export const queueAddServiceHelper = async (queueName, job) => {
+  console.log("job", job);
+  console.log("queueName", queueName);
+
+  // await queueService(queueName, job);
+  const bullQueue = createBullQueue(queueName)
+  const addJob =  await bullQueue.add(job)
+  console.log("addJob---->", addJob);
+
+  bullQueue.process(notificationSubscriptionQueueProcessor);
+  }
+
+//   console.log("notification subscription queue", notificationSubscriptionQueue);
+// queueService.process(notificationSubscriptionQueueProcessor)
+
+// export const queueProcessServiceHelper = async (queueName, notificationSubscriptionQueueProcessor) => {
+  // console.log("processQueueService", processRequest);  
+  // console.log("queueName", queueName);
+
+//  const bullQueue = createBullQueue(queueName);
+//   await bullQueue.process(notificationSubscriptionQueueProcessor);
+// };

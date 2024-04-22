@@ -2,59 +2,33 @@ import { Subscription } from "../models/subscription.model.js";
 import { Channel } from "../models/channel.model.js";
 import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/ApiError.js";
-import { isValidObjectId, getUserObjectId } from "../utils/helperFunctions.js";
+import { isValidObjectId, getUserObjectId, queueAddServiceHelper } from "../utils/helperFunctions.js";
+// import notificationQueue from '../notifications/notificationQueue.js';
 
+// import processRequest from "../processors/notificationSubscriptionQueueProcessor.js";
 
-/************** Send Notification Methods ******************/
-
-// Import your push notification 
-import webpush from "web-push";
-
-const publicVapidKey = 'BH7rBAHNoTyPVsE1BdcIow7LUt0TBLIE9GyVSfTQP-b5dTeheZma_Fi2eWWjYopkn6HoGbdEsRgaayctf8RviO4';
-const privateVapidKey = 'WWvJjmtbkiNTPOEnF0ZA3HnvOJKsmAfe_uHuYa8ieJM';
-webpush.setVapidDetails('mailto:sameerhacker34@gmail.com', publicVapidKey, privateVapidKey)
-
-
-
-// Define your sendPushNotification method
-const sendPushNotification = async (subscription, payload) => {
-  try {
-    console.log("subscription", subscription);
-
-    // Send the push notification
-    const result = await webpush.sendNotification(subscription, JSON.stringify(payload));
-    console.log("result", result);
-    // Handle the result if necessary
-    console.log('Push notification sent successfully:', result);
-  } catch (error) {
-    // Handle any errors that occur during notification sending
-    console.log("error:", error);
-    console.error('Error sending push notification:', error.message);
-  }
-};
 
 // Create Subscribe methods
 const createSubscription = async (loggedInUser, bodyData) => {
-  const { userId, channelId, pushSubscription } = bodyData;
-  console.log("loged", loggedInUser);
-  console.log("userId", userId);
-  console.log("pushSubscription", pushSubscription);
-  const validIds = isValidObjectId([loggedInUser]);
+  console.log("loggedInUser", loggedInUser);
+  const { userId, channelId } = bodyData;
 
-  if (!validIds[loggedInUser]) {
-    throw new ApiError(404, "Invalid ObjectId Format");
+  if (!isValidObjectId([loggedInUser._id])) {
+    throw new ApiError(404, "Invalid ObjectId Format for loggedInUser");
   }
 
+  // Check if user exists
   const userExists = await User.findById(userId);
-  // console.log("userExists", userExists);
   if (!userExists) {
     throw new ApiError(404, "User not found");
   }
 
-  if (userExists._id.toString() !== validIds[loggedInUser].toString()) {
+  // Check if the loggedInUser is authorized to subscribe
+  if (userExists._id.toString() !== loggedInUser._id.toString()) {
     throw new ApiError(400, "Only authorized Owner can subscribed the channel");
   }
 
+   // Check if the channel exists
   const channel = await Channel.findById(channelId);
   console.log("channel", channel);
   if (!channel) {
@@ -66,54 +40,37 @@ const createSubscription = async (loggedInUser, bodyData) => {
     throw new ApiError(400, "Cannot subscribe to your own channel");
   }
 
-  // To Check if user already subscribed
-  const checkIsSubcribe = await Subscription.findOne({
-    subscriber: userExists,
+  // Check if the user is already subscribed to the channel
+  const existingSubscription = await Subscription.findOne({
+    subscriber: userExists._id,
     channel: channel.owner,
   });
-
-  if (checkIsSubcribe) {
+  if (existingSubscription) {
     throw new ApiError(400, "You have already subscribed to this channel");
   }
 
-  // Save the push subscription to the user document
-  const channelOwner = await User.findOne({_id: channel.owner });
-  console.log("channelOwner", channelOwner);
-
-  channelOwner.pushSubscription = pushSubscription;
-   await channelOwner.save();
-
-   console.log("Saving subscription to channel owner", channelOwner);
-
-  // Check if the pushSubscription property is assigned to channelOwner
-  console.log("Saved push subscription:", channelOwner.pushSubscription);
-
-
+  // Create a new subscription entry
   const newSubscription = new Subscription({
-    subscriber: userExists,
+    subscriber: userExists._id,
     channel: channel.owner, // Store the creator's ObjectId in the channel field
   });
+  console.log("newSubscription", newSubscription);
+   await newSubscription.save(); 
   
-  //  await newSubscription.save(); 
+  // Enqueue a job to send notification to the channel owner
+ await queueAddServiceHelper('subscriptionQueue', {
+    userId: loggedInUser._id,
+    channelId: channel.owner,
+    message: `User ${loggedInUser.username} has subscribed to your channel`,
+  })
 
-  // // Send push notification to the channel owner when user is subscribed to the channel
-
-  if (!channelOwner || !channelOwner.pushSubscription || !channelOwner.pushSubscription.endpoint) {
-    console.error('Channel owner does not have a valid push subscription.');
-    return newSubscription;
-  }
-
- const payload= {
-    title: 'MadexTube',
-    message: `${userExists.username} has subscribed to your channel.`,
-    icon: 'https://cdn2.vectorstock.com/i/thumb-large/94/66/emoji-smile-icon-symbol-smiley-face-vector-26119466.jpg',
-  }
-   // Send push notification to the channel owner using other means
-  //  const notificationMessage = `${userExists.username} has subscribed to your channel.`;
-   sendPushNotification(channelOwner.pushSubscription,payload); // Call your push notification service with an alternative identifier (e.g., email)
-  
-   return newSubscription;
-};
+  // await queueServiceHelper.add('subscriptionQueue',{
+  //   userId: loggedInUser._id,
+  //   channelId: channel.owner,
+  //   message: `User ${loggedInUser.username} has subscribed to your channel`,
+  // });
+  return newSubscription;
+}
 
 
 const unsubcribeSubscription = async (loggedInUser, paramsData) => {

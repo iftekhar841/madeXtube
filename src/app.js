@@ -46,6 +46,7 @@ import playlist_route from "./routes/playlist.route.js";
 import comment_route from "./routes/comment.route.js";
 import searchVideo_route from "./routes/searchVideo.routes.js";
 import feedback_route from "./routes/feedback.route.js";
+import notification_route from "./routes/notification.route.js";
 
 
 
@@ -65,6 +66,7 @@ app.use("/api/v1", playlist_route);
 app.use("/api/v1", comment_route);
 app.use("/api/v1", searchVideo_route);
 app.use("/api/v1", feedback_route);
+app.use("/api/v1", notification_route);
 
 //http://localhost:8000/api/v1/users/register
 

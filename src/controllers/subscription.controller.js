@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createSubscription = asyncHandler(async (req, res) => {
   try {
-    const loggedInUser = req.user._id;
+    const loggedInUser = req.user;
     const subcriptionResponse = await subscriptionService.createSubscription(
       loggedInUser,
       req.body
