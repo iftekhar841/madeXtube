@@ -34,7 +34,24 @@ const updateNotification = asyncHandler(async(req, res) => {
     }
 })
 
+
+const readNotification = asyncHandler(async(req, res) => {
+    try {
+        const notificationResponse = await notificationService.readNotification(
+            req.user._id
+        );
+        return res.status(200).json(new ApiResponse(200, notificationResponse, "Notification read successfully"));
+    } catch (error) {
+        return res
+       .status(500)
+       .json(
+            new ApiError({ statusCode: error.statusCode, message: error.message })
+        );
+    }
+})
+
 export default {
     getNotifications,
-    updateNotification
+    updateNotification,
+    readNotification
 }

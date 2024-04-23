@@ -9,7 +9,9 @@ import notificationController from "../controllers/notification.controller.js";
 
 notification_route.get('/notifications', verifyJWT, notificationController.getNotifications);
 
-notification_route.put('/update-notification/:notificatiId', verifyJWT, notificationController.updateNotification);
+notification_route.put('/notifications/update-notification/:notificatiId', verifyJWT, notificationController.updateNotification);
+
+notification_route.put('/notifications/read-notification', verifyJWT, notificationController.readNotification)
 
 
 
