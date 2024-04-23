@@ -1,84 +1,91 @@
 import { isValidObjectId } from "mongoose";
 import Notification from "../models/notification.model.js";
+import { ApiError } from "../utils/ApiError.js";
 
-  const getNotifications = async (queryParams, loggedInUser) => {
-    const { type } = queryParams;
-    console.log("type", type);
-    const condition = {
-      type: {
-        $options: "i",
-        $regex: type,
-      },
-      // isRead: false,
-      user: loggedInUser,
-    };
-    console.log("condition", condition);
+// Get all notifications
+const getNotifications = async (queryParams, loggedInUser) => {
+  const { type } = queryParams;
 
-    // Query to find notifications
-    const notificationsQuery = Notification.find(condition).sort({
-      createdAt: -1,
-    });
-    const countCondition = {
-      type: {
-        $options: "i",
-        $regex: type,
-      },
-      isRead: false,
-      user: loggedInUser,
-    };
-    // Query to count the total number of notifications
-    const countQuery = Notification.countDocuments(countCondition);
-
-    // Execute both queries in parallel
-    const [notifications, countNotification] = await Promise.all([
-      notificationsQuery,
-      countQuery,
-    ]);
-
-    console.log("Notifications", notifications);
-    console.log("Total count of notifications", countNotification);
-
-    // Return both notifications and count
-    return { notifications, countNotification };
+  // Define the condition to find notifications
+  const condition = {
+    type: { $regex: new RegExp(type, "i") },
+    user: loggedInUser,
   };
 
-const updateNotification = async (paramsData) => {
-  const { notificationId } = paramsData;
-  const isValid = isValidObjectId(notificationId);
-  if (!isValid) {
-    throw new ApiError(400, "Invalid NotificationId Format");
-  }
-  console.log("notificationId", notificationId);
-  const notification = await Notification.findByIdAndUpdate(
-    notificationId,
-    { isRead: true },
-    { new: true }
-  );
-  console.log("notification", notification);
-  return notification;
+  // Query to find notifications
+  const notificationsQuery = Notification.find(condition)
+    .sort({ createdAt: -1 })
+    .lean(); // Use lean() to return plain JavaScript objects
+
+  // Query to count the total number of unread notifications
+  const countQuery = Notification.countDocuments({
+    ...condition,
+    isRead: false,
+  });
+
+  // Execute both queries in parallel
+  const [notifications, countNotification] = await Promise.all([
+    notificationsQuery,
+    countQuery,
+  ]);
+
+  // Return both notifications and count
+  return { notifications, countNotification };
 };
 
 
+// Update a notification and return the updated notification
 const readNotification = async (loggedInUser) => {
   const isValid = isValidObjectId(loggedInUser);
   if (!isValid) {
     throw new ApiError(400, "Invalid loggedInUser Format");
   }
-  console.log("loggedInUser", loggedInUser);
-  const result  = await Notification.updateMany(
-    { user: loggedInUser, isRead: false, type:"subscribe" },
-    { $set: { isRead: true },}
+  const result = await Notification.updateMany(
+    { user: loggedInUser, isRead: false, type: "subscribe" },
+    { $set: { isRead: true } }
   );
-  console.log("Update result:", result);
   // Return the number of modified documents
 
-  if((result.acknowledged === true) && (result.modifiedCount)) {
-      return result.modifiedCount;
+  if (result.acknowledged === true && result.modifiedCount) {
+    return result.modifiedCount;
   }
+};
+
+
+// Delete a notification
+const deleteNotification = async (queryParams, loggedInUser) => {
+  const { notificationId } = queryParams;
+
+  if (!isValidObjectId(notificationId)) {
+    throw new ApiError(400, "Invalid NotificationId Format");
+  }
+
+  // Find the notification by ID
+  const fetchedNotification = await Notification.findById(notificationId);
+
+  // Check if the notification exists
+  if (!fetchedNotification) {
+    throw new ApiError(404, "Notification not found");
+  }
+
+  // Check if the logged-in user is the owner of the notification
+  if (fetchedNotification.user.toString() !== loggedInUser.toString()) {
+    throw new ApiError(400, "Only authorize owner can delete the notification");
+  }
+
+  // Delete the notification
+  const deletedNotification =
+    await Notification.findByIdAndDelete(notificationId);
+
+  // If the notification was not deleted, throw an error
+  if (!deletedNotification) {
+    throw new ApiError(400, "Error deleting the notification");
+  }
+  return deletedNotification;
 };
 
 export default {
   getNotifications,
-  updateNotification,
-  readNotification
+  readNotification,
+  deleteNotification,
 };
