@@ -10,4 +10,10 @@ videoReport_route.post(
   videoReportController.CreateReportOnVideo
 );
 
+videoReport_route.get(
+  "/get-all-reports",
+  verifyJWT,
+  videoReportController.GetAllReportsByUserId
+);
+
 export default videoReport_route;

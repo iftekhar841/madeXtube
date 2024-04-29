@@ -71,6 +71,25 @@ const CreateReportOnVideo = async (loggedInUser, bodyData) => {
   return fethedReport;
 };
 
+const GetAllReportsByUserId = async (loggedInUser) => {
+  // Fetch the user object id
+  const userObjectId = await getUserObjectId(loggedInUser);
+
+  const allReport = await VideoReport.find({
+    ownerId: userObjectId,
+  })
+    .populate("videoId", "title")
+    .populate("reportId", "reportName")
+    .select("reportContent");
+
+  if (!allReport.length) {
+    throw new ApiError(404, "No reports found for this user");
+  }
+
+  return allReport;
+};
+
 export default {
   CreateReportOnVideo,
+  GetAllReportsByUserId,
 };
